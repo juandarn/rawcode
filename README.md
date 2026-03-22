@@ -50,6 +50,8 @@ Agents marked "session" inherit your active model. Change it with `/model`.
 | `/rawcode:compact` | Generate compact context summary |
 | `/rawcode:fix <description>` | Fix a bug with root-cause approach |
 | `/rawcode:think-then-code <task>` | Think with Opus, then code with Sonnet |
+| `/rawcode:mode <mode>` | Switch mode: think, code, review, explore, default |
+| `/rawcode:setup-ui` | Install tweakcc and apply rawcode theme |
 
 ### Commands
 
@@ -109,6 +111,33 @@ claude --agent rawcode:reviewer    # code review mode
 claude --agent rawcode:think       # deep reasoning with Opus
 claude --agent rawcode:code        # fast coding with Sonnet
 ```
+
+## Switching Modes (like OpenCode's Tab)
+
+Claude Code doesn't support Tab to switch modes, but rawcode has `/rawcode:mode`:
+
+```
+/rawcode:mode think     # deep analysis, read-only
+/rawcode:mode code      # fast coding, minimal talk
+/rawcode:mode review    # code review mode
+/rawcode:mode explore   # search and explore
+/rawcode:mode default   # back to standard rawcode
+```
+
+One command, instant switch. No need to restart the session.
+
+## UI Customization
+
+rawcode includes a Powerline-style status line and optional UI tweaks:
+
+```
+/rawcode:setup-ui       # install tweakcc + apply rawcode theme
+```
+
+**Recommended terminal setup:**
+- Font: Any Nerd Font (JetBrains Mono Nerd, FiraCode Nerd, etc.)
+- Theme: Dark mode (`/config` → select dark theme)
+- Terminal: Windows Terminal, iTerm2, Kitty, or WezTerm for best color support
 
 ## Extending rawcode
 

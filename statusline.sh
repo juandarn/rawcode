@@ -1,15 +1,15 @@
 #!/bin/bash
-# rawcode status line for Claude Code
-# Reads JSON session data from stdin and displays a compact status bar
+# rawcode powerline status line for Claude Code
+# Uses ANSI colors and unicode chars for a clean look
 
 read -r INPUT
 
 if [ -z "$INPUT" ]; then
-  echo "rawcode"
+  echo -e "\033[48;5;236m\033[38;5;203m  rawcode \033[0m"
   exit 0
 fi
 
-# Parse JSON fields using grep/sed (no jq dependency)
+# Parse JSON fields
 get_field() {
   echo "$INPUT" | grep -o "\"$1\":[^,}]*" | head -1 | sed 's/.*://' | tr -d ' "}'
 }
@@ -19,37 +19,69 @@ CONTEXT_PERCENT=$(get_field "contextPercent")
 COST=$(get_field "totalCost")
 AGENT=$(get_field "agentName")
 
-# Format model name (shorten)
+# Shorten model name
 case "$MODEL" in
-  *opus*) MODEL_SHORT="opus" ;;
-  *sonnet*) MODEL_SHORT="sonnet" ;;
-  *haiku*) MODEL_SHORT="haiku" ;;
-  *) MODEL_SHORT="$MODEL" ;;
+  *opus*) M="opus" ;;
+  *sonnet*) M="sonnet" ;;
+  *haiku*) M="haiku" ;;
+  *) M="${MODEL:-?}" ;;
 esac
 
-# Build status line
-STATUS="rawcode"
-
-if [ -n "$AGENT" ] && [ "$AGENT" != "null" ]; then
-  STATUS="$STATUS | @$AGENT"
-fi
-
-if [ -n "$MODEL_SHORT" ] && [ "$MODEL_SHORT" != "null" ]; then
-  STATUS="$STATUS | $MODEL_SHORT"
-fi
-
-if [ -n "$CONTEXT_PERCENT" ] && [ "$CONTEXT_PERCENT" != "null" ]; then
-  STATUS="$STATUS | ctx:${CONTEXT_PERCENT}%"
-fi
-
-if [ -n "$COST" ] && [ "$COST" != "null" ]; then
-  STATUS="$STATUS | \$$COST"
+# Context color (green < 60%, yellow < 80%, red >= 80%)
+CTX="${CONTEXT_PERCENT:-0}"
+if [ "$CTX" != "null" ] && [ -n "$CTX" ]; then
+  if [ "$CTX" -ge 80 ] 2>/dev/null; then
+    CTX_COLOR="38;5;203"  # red
+  elif [ "$CTX" -ge 60 ] 2>/dev/null; then
+    CTX_COLOR="38;5;220"  # yellow
+  else
+    CTX_COLOR="38;5;114"  # green
+  fi
+else
+  CTX=""
+  CTX_COLOR="38;5;114"
 fi
 
 # Git branch
 BRANCH=$(git branch --show-current 2>/dev/null)
-if [ -n "$BRANCH" ]; then
-  STATUS="$STATUS | $BRANCH"
+
+# Build segments with colors
+# Colors: bg=236(dark gray), 238(medium), 240(light)
+# fg: 203(red/rawcode), 114(green), 220(yellow), 75(blue), 252(white)
+
+SEG=""
+
+# rawcode logo
+SEG+="\033[48;5;203m\033[38;5;255m rawcode \033[48;5;238m\033[38;5;203m\033[0m"
+
+# Agent (if active)
+if [ -n "$AGENT" ] && [ "$AGENT" != "null" ]; then
+  SEG+="\033[48;5;238m\033[38;5;75m @${AGENT} \033[48;5;236m\033[38;5;238m\033[0m"
+else
+  SEG+="\033[48;5;238m\033[38;5;238m\033[48;5;236m\033[0m"
 fi
 
-echo "$STATUS"
+# Model
+if [ -n "$M" ] && [ "$M" != "?" ]; then
+  SEG+="\033[48;5;236m\033[38;5;252m  ${M} "
+fi
+
+# Context
+if [ -n "$CTX" ] && [ "$CTX" != "null" ]; then
+  SEG+="\033[48;5;236m\033[${CTX_COLOR}m ctx:${CTX}% "
+fi
+
+# Cost
+if [ -n "$COST" ] && [ "$COST" != "null" ]; then
+  SEG+="\033[48;5;236m\033[38;5;220m \$${COST} "
+fi
+
+# Git branch
+if [ -n "$BRANCH" ]; then
+  SEG+="\033[48;5;236m\033[38;5;114m  ${BRANCH} "
+fi
+
+# End
+SEG+="\033[0m\033[38;5;236m\033[0m"
+
+echo -e "$SEG"
