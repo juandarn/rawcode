@@ -1,6 +1,8 @@
 # rawcode
 
-OpenCode philosophy for Claude Code. Install and it just works.
+OpenCode's prompting philosophy for Claude Code. Install it, and Claude Code thinks like OpenCode.
+
+No new commands. No new UI. Just better prompting.
 
 ## Install
 
@@ -15,46 +17,39 @@ irm https://raw.githubusercontent.com/juandarn/rawcode/master/install.ps1 | iex
 git clone https://github.com/juandarn/rawcode.git ~/.claude/plugins/rawcode
 ```
 
-## How It Works
+## What Changes
 
-rawcode changes how Claude Code behaves. No commands needed — just talk to it.
+rawcode injects OpenCode's philosophy into Claude Code's agent system:
 
-**Concise.** Responses under 4 lines unless you ask for more.
-**Root cause.** Fixes the origin, not the symptom.
-**Minimal.** Only changes what's necessary.
-**Verify.** Runs tests after every change.
+- **Concise.** Responses under 4 lines unless you ask for more.
+- **Root cause.** Fixes the origin, not the symptom.
+- **Minimal.** Only changes what's necessary. No drive-by refactoring.
+- **Verify.** Runs tests after every change.
+- **No fluff.** No preamble, no summaries, no praise.
+
+Everything else stays native — `/plan`, `/compact`, and all Claude Code features work as usual.
 
 ## Agents
 
-Claude delegates to the right agent automatically. You don't need to call them.
+Claude delegates to these automatically. You don't need to call them.
 
 | Agent | Purpose |
 |-------|---------|
-| `coder` | Main agent. Writes code, fixes bugs, follows the raw philosophy. |
+| `coder` | Main agent. Writes code with raw philosophy. |
 | `task` | Read-only. Searches and explores the codebase. |
-| `reviewer` | Read-only. Reviews code for bugs, security, performance. |
+| `reviewer` | Read-only. Reviews code for bugs and security. |
 | `summarizer` | Generates session summaries. |
-| `titler` | Generates short titles (max 50 chars). |
+| `titler` | Short titles (max 50 chars). |
 | `think` | Deep reasoning with **Opus**. Read-only. |
 | `code` | Fast coding with **Sonnet**. |
 
-To force a specific agent:
+To start a session with a specific agent:
+
 ```bash
 claude --agent rawcode:coder    # full raw mode
-claude --agent rawcode:think    # Opus reasoning
-claude --agent rawcode:code     # Sonnet coding
+claude --agent rawcode:think    # Opus deep reasoning
+claude --agent rawcode:code     # Sonnet fast coding
 ```
-
-## Commands
-
-Only 4 — like OpenCode, most things are automatic.
-
-| Command | What It Does |
-|---------|-------------|
-| `/rawcode:init` | Initialize project (creates opencode.md) |
-| `/rawcode:compact` | Compact session context |
-| `/rawcode:fix <bug>` | Fix a bug with root-cause approach |
-| `/rawcode:t <task>` | Think (Opus) then code (Sonnet) |
 
 ## Protections
 
