@@ -1,0 +1,83 @@
+# opencode-style
+
+A Claude Code plugin that replicates OpenCode's workflow philosophy. Install it and Claude Code immediately adopts OpenCode's approach: concise responses, root-cause fixes, minimal changes, and specialized agents.
+
+## Installation
+
+```bash
+# Local development
+claude --plugin-dir /path/to/opencode-style
+
+# Or install from directory
+claude plugin install /path/to/opencode-style
+```
+
+## What It Does
+
+Once installed, you get:
+
+### Agents
+
+| Agent | Model | Purpose |
+|-------|-------|---------|
+| `coder` | Sonnet | Main agent with full OpenCode philosophy. Use with `claude --agent opencode-style:coder` |
+| `task` | Haiku | Read-only explorer. Fast codebase search and questions. Cannot modify files. |
+| `reviewer` | Sonnet | Code review focused on root causes. Cannot modify files. |
+| `summarizer` | Haiku | Session summary generator. |
+| `titler` | Haiku | Short title generator (max 50 chars). |
+
+### Skills (Slash Commands)
+
+| Command | What It Does |
+|---------|-------------|
+| `/opencode-style:review` | Review uncommitted changes or a specific file |
+| `/opencode-style:explore <question>` | Explore the codebase to answer a question |
+| `/opencode-style:summarize` | Summarize the current session |
+| `/opencode-style:compact` | Generate compact context summary |
+| `/opencode-style:fix <description>` | Fix a bug with root-cause approach |
+
+### Commands
+
+| Command | What It Does |
+|---------|-------------|
+| `/opencode-style:status` | Project dashboard (git status + recent log) |
+| `/opencode-style:diff` | Formatted diff with per-file analysis |
+
+### Automatic Protections
+
+- Blocks editing `.env` files
+- Blocks editing migration files
+- Blocks editing lock files (package-lock.json, yarn.lock, pnpm-lock.yaml)
+
+## The OpenCode Philosophy
+
+1. **Concise.** Responses under 4 lines unless detail is requested.
+2. **Root cause.** Fix the origin of the problem, not the symptom.
+3. **Minimal.** Only change what's necessary. No drive-by refactoring.
+4. **Verify.** Run tests after every change.
+5. **Existing patterns.** Follow what the codebase already does.
+6. **No fluff.** No preamble, no summaries, no praise.
+
+## Using the Coder Agent
+
+For the full OpenCode experience, start Claude Code with:
+
+```bash
+claude --agent opencode-style:coder
+```
+
+This makes Claude behave like OpenCode's Coder Agent for the entire session.
+
+## Delegating to Subagents
+
+Within a session, use @mentions to delegate:
+
+```
+@task find all API endpoints in this project
+@reviewer check the last commit for issues
+@summarizer what did we do today?
+```
+
+## License
+
+MIT

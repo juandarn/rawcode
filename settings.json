@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "deny": [
+      "Write(.env*)",
+      "Edit(.env*)",
+      "Write(**/migrations/**)",
+      "Edit(**/migrations/**)"
+    ]
+  }
+}
