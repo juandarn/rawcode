@@ -4,13 +4,22 @@ A Claude Code plugin that replicates OpenCode's workflow philosophy. Install it 
 
 ## Installation
 
+**One-liner (Mac/Linux):**
 ```bash
-# Local development
-claude --plugin-dir /path/to/opencode-style
-
-# Or install from directory
-claude plugin install /path/to/opencode-style
+curl -fsSL https://raw.githubusercontent.com/juandarn/opencode-style/master/install.sh | bash
 ```
+
+**One-liner (Windows PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/juandarn/opencode-style/master/install.ps1 | iex
+```
+
+**Manual:**
+```bash
+git clone https://github.com/juandarn/opencode-style.git ~/.claude/plugins/opencode-style
+```
+
+That's it. Next time you run `claude`, the plugin loads automatically.
 
 ## What It Does
 
