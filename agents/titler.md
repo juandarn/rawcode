@@ -2,7 +2,6 @@
 name: titler
 description: Generates short titles for conversations, commits, or branches. Max 50 characters, verb+object format.
 disallowedTools: Write, Edit, Bash
-model: haiku
 maxTurns: 3
 effort: low
 ---

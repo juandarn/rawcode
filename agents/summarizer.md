@@ -3,7 +3,6 @@ name: summarizer
 description: Summarizes what was accomplished in the current session. Use when wrapping up work, handing off, or before a break.
 tools: Read, Grep, Glob, Bash
 disallowedTools: Write, Edit
-model: haiku
 maxTurns: 10
 effort: low
 ---

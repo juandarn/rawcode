@@ -27,13 +27,15 @@ Once installed, you get:
 
 ### Agents
 
-| Agent | Model | Purpose |
-|-------|-------|---------|
-| `coder` | Sonnet | Main agent with full OpenCode philosophy. Use with `claude --agent rawcode:coder` |
-| `task` | Haiku | Read-only explorer. Fast codebase search and questions. Cannot modify files. |
-| `reviewer` | Sonnet | Code review focused on root causes. Cannot modify files. |
-| `summarizer` | Haiku | Session summary generator. |
-| `titler` | Haiku | Short title generator (max 50 chars). |
+| Agent | Purpose |
+|-------|---------|
+| `coder` | Main agent with full raw philosophy. Use with `claude --agent rawcode:coder` |
+| `task` | Read-only explorer. Fast codebase search and questions. Cannot modify files. |
+| `reviewer` | Code review focused on root causes. Cannot modify files. |
+| `summarizer` | Session summary generator. |
+| `titler` | Short title generator (max 50 chars). |
+
+All agents inherit the model from your active session. Change it anytime with `/model`.
 
 ### Skills (Slash Commands)
 

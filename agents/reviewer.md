@@ -3,7 +3,6 @@ name: reviewer
 description: Code review specialist. Reviews for bugs, security, performance, and style. Focuses on root causes. Use after code changes or for PR review.
 tools: Read, Grep, Glob, Bash
 disallowedTools: Write, Edit
-model: sonnet
 maxTurns: 20
 effort: high
 ---

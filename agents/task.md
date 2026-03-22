@@ -3,7 +3,6 @@ name: task
 description: Read-only information gathering agent. Fast codebase exploration, file discovery, code search. Cannot modify files. Use for questions about code structure, finding implementations, or understanding architecture.
 tools: Read, Grep, Glob, Bash
 disallowedTools: Write, Edit
-model: haiku
 maxTurns: 30
 effort: medium
 ---
