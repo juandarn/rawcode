@@ -1,4 +1,4 @@
-# opencode-style
+# rawcode
 
 A Claude Code plugin that replicates OpenCode's workflow philosophy. Install it and Claude Code immediately adopts OpenCode's approach: concise responses, root-cause fixes, minimal changes, and specialized agents.
 
@@ -6,17 +6,17 @@ A Claude Code plugin that replicates OpenCode's workflow philosophy. Install it 
 
 **One-liner (Mac/Linux):**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/juandarn/opencode-style/master/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/juandarn/rawcode/master/install.sh | bash
 ```
 
 **One-liner (Windows PowerShell):**
 ```powershell
-irm https://raw.githubusercontent.com/juandarn/opencode-style/master/install.ps1 | iex
+irm https://raw.githubusercontent.com/juandarn/rawcode/master/install.ps1 | iex
 ```
 
 **Manual:**
 ```bash
-git clone https://github.com/juandarn/opencode-style.git ~/.claude/plugins/opencode-style
+git clone https://github.com/juandarn/rawcode.git ~/.claude/plugins/rawcode
 ```
 
 That's it. Next time you run `claude`, the plugin loads automatically.
@@ -29,7 +29,7 @@ Once installed, you get:
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
-| `coder` | Sonnet | Main agent with full OpenCode philosophy. Use with `claude --agent opencode-style:coder` |
+| `coder` | Sonnet | Main agent with full OpenCode philosophy. Use with `claude --agent rawcode:coder` |
 | `task` | Haiku | Read-only explorer. Fast codebase search and questions. Cannot modify files. |
 | `reviewer` | Sonnet | Code review focused on root causes. Cannot modify files. |
 | `summarizer` | Haiku | Session summary generator. |
@@ -39,18 +39,18 @@ Once installed, you get:
 
 | Command | What It Does |
 |---------|-------------|
-| `/opencode-style:review` | Review uncommitted changes or a specific file |
-| `/opencode-style:explore <question>` | Explore the codebase to answer a question |
-| `/opencode-style:summarize` | Summarize the current session |
-| `/opencode-style:compact` | Generate compact context summary |
-| `/opencode-style:fix <description>` | Fix a bug with root-cause approach |
+| `/rawcode:review` | Review uncommitted changes or a specific file |
+| `/rawcode:explore <question>` | Explore the codebase to answer a question |
+| `/rawcode:summarize` | Summarize the current session |
+| `/rawcode:compact` | Generate compact context summary |
+| `/rawcode:fix <description>` | Fix a bug with root-cause approach |
 
 ### Commands
 
 | Command | What It Does |
 |---------|-------------|
-| `/opencode-style:status` | Project dashboard (git status + recent log) |
-| `/opencode-style:diff` | Formatted diff with per-file analysis |
+| `/rawcode:status` | Project dashboard (git status + recent log) |
+| `/rawcode:diff` | Formatted diff with per-file analysis |
 
 ### Automatic Protections
 
@@ -72,7 +72,7 @@ Once installed, you get:
 For the full OpenCode experience, start Claude Code with:
 
 ```bash
-claude --agent opencode-style:coder
+claude --agent rawcode:coder
 ```
 
 This makes Claude behave like OpenCode's Coder Agent for the entire session.

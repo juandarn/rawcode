@@ -2,7 +2,7 @@
 name: review
 description: Review recent code changes for bugs, security issues, and quality problems
 context: fork
-agent: opencode-style:reviewer
+agent: rawcode:reviewer
 ---
 
 Review the recent code changes in this project.

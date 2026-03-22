@@ -1,13 +1,13 @@
 #!/bin/bash
-# opencode-style installer for Claude Code
-# Usage: curl -fsSL https://raw.githubusercontent.com/juandarn/opencode-style/master/install.sh | bash
+# rawcode installer for Claude Code
+# Usage: curl -fsSL https://raw.githubusercontent.com/juandarn/rawcode/master/install.sh | bash
 
 set -e
 
-REPO="juandarn/opencode-style"
-INSTALL_DIR="$HOME/.claude/plugins/opencode-style"
+REPO="juandarn/rawcode"
+INSTALL_DIR="$HOME/.claude/plugins/rawcode"
 
-echo "Installing opencode-style plugin..."
+echo "Installing rawcode plugin..."
 
 # Clean previous install
 if [ -d "$INSTALL_DIR" ]; then
@@ -27,17 +27,17 @@ fi
 rm -rf "$INSTALL_DIR/.git"
 
 echo ""
-echo "opencode-style installed successfully!"
+echo "rawcode installed successfully!"
 echo ""
 echo "Usage:"
 echo "  claude                                  # plugin loads automatically"
-echo "  claude --agent opencode-style:coder     # full OpenCode mode"
+echo "  claude --agent rawcode:coder     # full OpenCode mode"
 echo ""
 echo "Available commands:"
-echo "  /opencode-style:review     Review code changes"
-echo "  /opencode-style:explore    Explore the codebase"
-echo "  /opencode-style:fix        Fix a bug (root-cause)"
-echo "  /opencode-style:summarize  Summarize session"
-echo "  /opencode-style:compact    Compact context"
-echo "  /opencode-style:status     Project dashboard"
-echo "  /opencode-style:diff       Formatted diff"
+echo "  /rawcode:review     Review code changes"
+echo "  /rawcode:explore    Explore the codebase"
+echo "  /rawcode:fix        Fix a bug (root-cause)"
+echo "  /rawcode:summarize  Summarize session"
+echo "  /rawcode:compact    Compact context"
+echo "  /rawcode:status     Project dashboard"
+echo "  /rawcode:diff       Formatted diff"

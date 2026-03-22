@@ -1,6 +1,6 @@
 ---
 name: coder
-description: Main coding agent with OpenCode philosophy. Concise responses, root-cause fixes, minimal changes. Use as primary agent with `claude --agent opencode-style:coder`.
+description: Main coding agent with raw philosophy. Concise responses, root-cause fixes, minimal changes. Use as primary agent with `claude --agent rawcode:coder`.
 model: sonnet
 effort: high
 ---

@@ -2,7 +2,7 @@
 name: compact
 description: Generate a compact summary of the conversation to reduce context usage
 context: fork
-agent: opencode-style:summarizer
+agent: rawcode:summarizer
 ---
 
 Generate a compact summary of this entire conversation for context preservation.

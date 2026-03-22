@@ -1,10 +1,10 @@
 {
-  "name": "opencode-style",
+  "name": "rawcode",
   "version": "1.0.0",
-  "description": "Replica OpenCode's workflow in Claude Code: concise responses, root-cause fixes, specialized agents, and workflow skills. Install and it just works.",
+  "description": "Raw coding philosophy for Claude Code: concise responses, root-cause fixes, minimal changes, specialized agents. No fluff. Install and it just works.",
   "author": {
-    "name": "jdrio"
+    "name": "juandarn"
   },
-  "keywords": ["workflow", "opencode", "agents", "code-review", "exploration"],
+  "keywords": ["workflow", "rawcode", "agents", "code-review", "exploration"],
   "license": "MIT"
 }

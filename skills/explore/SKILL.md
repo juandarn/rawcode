@@ -2,7 +2,7 @@
 name: explore
 description: Explore the codebase to answer a question or understand a system
 context: fork
-agent: opencode-style:task
+agent: rawcode:task
 ---
 
 Explore this codebase to answer the following question:
