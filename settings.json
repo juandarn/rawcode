@@ -12,5 +12,9 @@
       "Write(*pnpm-lock.yaml)",
       "Edit(*pnpm-lock.yaml)"
     ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/plugins/rawcode/statusline.sh"
   }
 }
