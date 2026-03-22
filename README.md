@@ -81,12 +81,19 @@ This makes Claude behave like OpenCode's Coder Agent for the entire session.
 
 ## Delegating to Subagents
 
-Within a session, use @mentions to delegate:
+Within a session, Claude automatically delegates to the right agent based on your request. You can also be explicit:
 
 ```
-@task find all API endpoints in this project
-@reviewer check the last commit for issues
-@summarizer what did we do today?
+Ask the task agent to find all API endpoints in this project
+Use the reviewer to check the last commit for issues
+```
+
+Or start a session with a specific agent:
+
+```bash
+claude --agent rawcode:task        # read-only exploration
+claude --agent rawcode:reviewer    # code review mode
+claude --agent rawcode:summarizer  # session summary
 ```
 
 ## License

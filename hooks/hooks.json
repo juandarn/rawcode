@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'FILE=\"$CLAUDE_TOOL_INPUT_FILE_PATH$CLAUDE_TOOL_INPUT_file_path\"; case \"$FILE\" in *.env|*.env.*|*/migrations/*|*package-lock.json|*yarn.lock|*pnpm-lock.yaml) echo \"{\\\"hookSpecificOutput\\\":{\\\"hookEventName\\\":\\\"PreToolUse\\\",\\\"permissionDecision\\\":\\\"deny\\\",\\\"permissionDecisionReason\\\":\\\"Protected file: $FILE. This file should not be modified directly by the assistant.\\\"}}\" ; exit 0 ;; *) exit 0 ;; esac'"
+            "command": "bash -c 'FILE=\"$CLAUDE_TOOL_INPUT_FILE_PATH$CLAUDE_TOOL_INPUT_file_path\"; case \"$FILE\" in *.env|*.env.*|*/migrations/*|**/migrations/**|*package-lock.json|*yarn.lock|*pnpm-lock.yaml) echo \"{\\\"hookSpecificOutput\\\":{\\\"hookEventName\\\":\\\"PreToolUse\\\",\\\"permissionDecision\\\":\\\"deny\\\",\\\"permissionDecisionReason\\\":\\\"Protected file: $FILE. This file should not be modified directly by the assistant.\\\"}}\" ; exit 0 ;; *) exit 0 ;; esac'"
           }
         ]
       },

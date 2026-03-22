@@ -4,7 +4,13 @@
       "Write(.env*)",
       "Edit(.env*)",
       "Write(**/migrations/**)",
-      "Edit(**/migrations/**)"
+      "Edit(**/migrations/**)",
+      "Write(*package-lock.json)",
+      "Edit(*package-lock.json)",
+      "Write(*yarn.lock)",
+      "Edit(*yarn.lock)",
+      "Write(*pnpm-lock.yaml)",
+      "Edit(*pnpm-lock.yaml)"
     ]
   }
 }
