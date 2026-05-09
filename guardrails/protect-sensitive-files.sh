@@ -2,6 +2,7 @@
 # Blocks editing of sensitive files: .env, migrations, lock files
 # Used as PreToolUse hook for Write|Edit
 
+# shellcheck disable=SC2154 # Variables injected by Claude Code hooks
 FILE="${CLAUDE_TOOL_INPUT_FILE_PATH}${CLAUDE_TOOL_INPUT_file_path}"
 
 case "$FILE" in
