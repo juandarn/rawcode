@@ -1,4 +1,5 @@
 {
+  "agent": "rawcode",
   "permissions": {
     "deny": [
       "Write(.env*)",
