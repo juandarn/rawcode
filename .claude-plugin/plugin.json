@@ -1,10 +1,10 @@
 {
   "name": "rawcode",
-  "version": "1.0.0",
-  "description": "Raw coding philosophy for Claude Code: concise responses, root-cause fixes, minimal changes, specialized agents. No fluff. Install and it just works.",
+  "version": "2.0.0",
+  "description": "OpenCode philosophy for Claude Code: concise, root-cause, minimal, secure, verified. No fluff. Install and it just works.",
   "author": {
     "name": "juandarn"
   },
-  "keywords": ["workflow", "rawcode", "agents", "code-review", "exploration"],
+  "keywords": ["workflow", "rawcode", "system-prompt", "code-quality", "security"],
   "license": "MIT"
 }

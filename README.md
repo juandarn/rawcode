@@ -1,17 +1,17 @@
 # rawcode
 
-OpenCode's prompting philosophy for Claude Code. Install it, and Claude Code thinks like OpenCode.
+OpenCode's philosophy for Claude Code. Install it, and Claude Code thinks different.
 
-No new commands. No new UI. Just better prompting.
+No commands. No agents to pick. Just a system prompt that makes Claude code better.
 
 ## Install
 
 ```bash
 # Mac/Linux
-curl -fsSL https://raw.githubusercontent.com/juandarn/rawcode/master/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/juandarn/rawcode/master/setup/install.sh | bash
 
 # Windows
-irm https://raw.githubusercontent.com/juandarn/rawcode/master/install.ps1 | iex
+irm https://raw.githubusercontent.com/juandarn/rawcode/master/setup/install.ps1 | iex
 
 # Manual
 git clone https://github.com/juandarn/rawcode.git ~/.claude/plugins/rawcode
@@ -19,41 +19,33 @@ git clone https://github.com/juandarn/rawcode.git ~/.claude/plugins/rawcode
 
 ## What Changes
 
-rawcode injects OpenCode's philosophy into Claude Code's agent system:
+rawcode injects a system prompt into every Claude Code session. You don't invoke anything — just open `claude` and it works.
 
+- **Read first.** Always reads existing code before writing. No blind code generation.
 - **Concise.** Responses under 4 lines unless you ask for more.
 - **Root cause.** Fixes the origin, not the symptom.
 - **Minimal.** Only changes what's necessary. No drive-by refactoring.
-- **Verify.** Runs tests after every change.
+- **Secure.** Concrete OWASP checklist on every change — not "be cautious".
+- **Verify.** Runs lint and tests after every change.
 - **No fluff.** No preamble, no summaries, no praise.
 
-Everything else stays native — `/plan`, `/compact`, and all Claude Code features work as usual.
+Everything stays native — `/plan`, `/compact`, and all Claude Code features work as usual.
 
-## Agents
+## Guardrails
 
-Claude delegates to these automatically. You don't need to call them.
+Automatic protections that run without you doing anything:
 
-| Agent | Purpose |
-|-------|---------|
-| `coder` | Main agent. Writes code with raw philosophy. |
-| `task` | Read-only. Searches and explores the codebase. |
-| `reviewer` | Read-only. Reviews code for bugs and security. |
-| `summarizer` | Generates session summaries. |
-| `titler` | Short titles (max 50 chars). |
-| `think` | Deep reasoning with **Opus**. Read-only. |
-| `code` | Fast coding with **Sonnet**. |
+| Guardrail | What it does |
+|-----------|-------------|
+| **Protect sensitive files** | Blocks editing `.env`, migrations, lock files |
+| **Read before write** | Reminds Claude to read files before modifying them |
+| **Sanitize commits** | Strips auto-generated attribution from commit messages |
 
-To start a session with a specific agent:
+## Uninstall
 
 ```bash
-claude --agent rawcode:coder    # full raw mode
-claude --agent rawcode:think    # Opus deep reasoning
-claude --agent rawcode:code     # Sonnet fast coding
+~/.claude/plugins/rawcode/setup/uninstall.sh
 ```
-
-## Protections
-
-Automatically blocks editing: `.env`, migrations, lock files.
 
 ## License
 
