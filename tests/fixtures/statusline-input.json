@@ -1,0 +1,6 @@
+{
+  "model": "claude-sonnet-4-6",
+  "contextPercent": 45,
+  "totalCost": 0.12,
+  "agentName": "rawcode"
+}

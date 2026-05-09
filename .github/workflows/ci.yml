@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [master, v2]
+  pull_request:
+    branches: [master]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate JSON files
+        run: |
+          echo "Validating settings.json..."
+          jq . settings.json
+          echo "Validating plugin.json..."
+          jq . .claude-plugin/plugin.json
+          echo "Validating guardrails.json..."
+          jq . guardrails/guardrails.json
+
+      - name: Validate agent frontmatter
+        run: |
+          for f in agents/*.md; do
+            echo "Checking $f..."
+            head -1 "$f" | grep -q "^---" || (echo "FAIL: $f missing frontmatter" && exit 1)
+            grep -q "^name:" "$f" || (echo "FAIL: $f missing name field" && exit 1)
+            grep -q "^description:" "$f" || (echo "FAIL: $f missing description field" && exit 1)
+          done
+          echo "All agents valid."
+
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: '.'
+          severity: warning
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install BATS
+        run: |
+          git clone --depth 1 https://github.com/bats-core/bats-core.git /tmp/bats
+          sudo /tmp/bats/install.sh /usr/local
+
+      - name: Make scripts executable
+        run: |
+          chmod +x guardrails/*.sh
+          chmod +x ui/statusline.sh
+          chmod +x setup/*.sh
+
+      - name: Run tests
+        run: bats tests/

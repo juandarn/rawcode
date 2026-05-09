@@ -15,6 +15,6 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "~/.claude/plugins/rawcode/statusline.sh"
+    "command": "~/.claude/plugins/rawcode/ui/statusline.sh"
   }
 }

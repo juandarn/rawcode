@@ -9,15 +9,21 @@ if [ -z "$INPUT" ]; then
   exit 0
 fi
 
-# Parse JSON fields
-get_field() {
-  echo "$INPUT" | grep -o "\"$1\":[^,}]*" | head -1 | sed 's/.*://' | tr -d ' "}'
-}
-
-MODEL=$(get_field "model")
-CONTEXT_PERCENT=$(get_field "contextPercent")
-COST=$(get_field "totalCost")
-AGENT=$(get_field "agentName")
+# Parse JSON fields — use jq if available, fallback to grep/sed
+if command -v jq &>/dev/null; then
+  MODEL=$(echo "$INPUT" | jq -r '.model // empty')
+  CONTEXT_PERCENT=$(echo "$INPUT" | jq -r '.contextPercent // empty')
+  COST=$(echo "$INPUT" | jq -r '.totalCost // empty')
+  AGENT=$(echo "$INPUT" | jq -r '.agentName // empty')
+else
+  get_field() {
+    echo "$INPUT" | grep -o "\"$1\":[^,}]*" | head -1 | sed 's/.*://' | tr -d ' "}'
+  }
+  MODEL=$(get_field "model")
+  CONTEXT_PERCENT=$(get_field "contextPercent")
+  COST=$(get_field "totalCost")
+  AGENT=$(get_field "agentName")
+fi
 
 # Shorten model name
 case "$MODEL" in
@@ -45,10 +51,8 @@ fi
 # Git branch
 BRANCH=$(git branch --show-current 2>/dev/null)
 
-# Build segments with colors
-# Colors: bg=236(dark gray), 238(medium), 240(light)
-# fg: 203(red/rawcode), 114(green), 220(yellow), 75(blue), 252(white)
-
+# Build segments
+# Colors: bg=236(dark gray), 238(medium) | fg: 203(red), 114(green), 220(yellow), 75(blue), 252(white)
 SEG=""
 
 # rawcode logo
