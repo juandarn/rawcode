@@ -168,7 +168,7 @@ else
 fi
 
 # ── Clean old backups (keep last 2) ────────────────
-BACKUPS=($(ls -dt "$PLUGIN_DIR/rawcode.backup."* 2>/dev/null || true))
+mapfile -t BACKUPS < <(ls -dt "$PLUGIN_DIR/rawcode.backup."* 2>/dev/null || true)
 if [ ${#BACKUPS[@]} -gt 2 ]; then
   for old in "${BACKUPS[@]:2}"; do
     rm -rf "$old"
