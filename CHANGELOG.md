@@ -13,8 +13,9 @@
 
 ### Added
 - **Output style delivery.** Ships `output-styles/rawcode.md`; the installer sets `outputStyle: "rawcode"` so the prompt applies to every session (the prompt was previously only an opt-in subagent). Uninstall reverts it.
-- **Context Discipline** section — input-side token guidance (narrow reads, delegate exploration, prefer diffs).
+- **Context Discipline** section — input-side token guidance (narrow reads, batch independent calls, delegate exploration, prefer diffs).
 - **Reasoning carve-out** — conciseness binds to the final response only, never to investigation/verification depth.
+- **Honesty section** — never claim a change works without running it, quote failures verbatim, no stub passed off as done. Plus an "if ambiguous, state the assumption" step before coding. (Kept deliberately small: measured turn/latency evals showed piling on more directives slows the agent without reducing turns; rawcode's terseness already wins on both.)
 
 ## 2.0.0
 
