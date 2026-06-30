@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- **Guardrails now actually load.** Hook registration moved from the orphaned `guardrails/guardrails.json` to the discoverable `hooks/hooks.json`, using `${CLAUDE_PLUGIN_ROOT}` paths. They never loaded before.
+- **Hooks read the real input contract.** Scripts now parse the hook JSON from stdin (`.tool_input.file_path` / `.command`) instead of unset `CLAUDE_TOOL_INPUT_*` env vars — they were silent no-ops.
+- **JSON-injection in `protect-sensitive-files`.** Reasons are now built with `jq`, so a path containing `"` can no longer break the deny JSON and fail open.
+- **`migrations/` at repo root** is now protected (the old `*/migrations/*` glob missed it).
+- **`sanitize-commit`** no longer false-fires on `git commit-tree` and reads the command from stdin.
+- **Installer portability/safety.** Replaced `mapfile` (absent in macOS bash 3.2), and a failed update clone now restores the backup instead of aborting under `set -e`.
+- **Executable bits** committed for the guardrail and statusline scripts.
+
+### Added
+- **Output style delivery.** Ships `output-styles/rawcode.md`; the installer sets `outputStyle: "rawcode"` so the prompt applies to every session (the prompt was previously only an opt-in subagent). Uninstall reverts it.
+- **Context Discipline** section — input-side token guidance (narrow reads, delegate exploration, prefer diffs).
+- **Reasoning carve-out** — conciseness binds to the final response only, never to investigation/verification depth.
+
 ## 2.0.0
 
 ### Breaking Changes

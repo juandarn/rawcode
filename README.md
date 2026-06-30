@@ -69,19 +69,21 @@ Automatic protections that run without you doing anything:
 
 ## How it Works
 
-rawcode is a [Claude Code plugin](https://docs.anthropic.com/en/docs/claude-code). It has three components:
+rawcode is a [Claude Code plugin](https://docs.anthropic.com/en/docs/claude-code). It has four parts:
 
 ```
 rawcode/
-├── agents/rawcode.md        # The system prompt — this is rawcode
-├── guardrails/              # Automatic protections (hooks)
+├── output-styles/rawcode.md   # The system prompt, as an output style — this is rawcode
+├── agents/rawcode.md          # Same prompt as an opt-in subagent (invoke via Task)
+├── hooks/hooks.json           # Registers the guardrail hooks
+├── guardrails/                # Automatic protections (hook scripts)
 │   ├── protect-sensitive-files.sh
 │   ├── enforce-read-before-write.sh
 │   └── sanitize-commit.sh
-└── ui/statusline.sh         # Shows model, context %, cost, git branch
+└── ui/statusline.sh           # Shows model, context %, cost, git branch
 ```
 
-The system prompt is injected into every session. The guardrails intercept tool calls to prevent common mistakes. That's it.
+The installer activates the **output style** (`outputStyle: "rawcode"` in your settings), which applies the prompt to every main session — no invocation needed. The **hooks** auto-load from `hooks/hooks.json` once the plugin is enabled and intercept tool calls to prevent common mistakes. Prefer to opt in manually? Run `/config → Output style → rawcode`.
 
 ## Statusline
 
