@@ -39,16 +39,16 @@ Everything stays native — `/plan`, `/compact`, and all Claude Code features wo
 
 ## How it compares
 
-rawcode injected as a system prompt, measured head-to-head against the Claude Code default and other "be concise" / persona setups (`claude -p`, same model, blind quality judge). Small sample — directional, not a benchmark suite:
+Measured, not claimed. rawcode's prompt was A/B-tested against the Claude Code baseline on **[HumanEval](https://github.com/openai/human-eval)** — a standard dataset graded by **executable unit tests** (no LLM judge, no bias). Paired design, `claude -p`, single greedy sample per problem, n=40. Correctness and length are reported as **separate axes** (a length-biased judge would conflate them):
 
-| Setup | Output tokens | Quality /10 | Correctness /5 | Quality per 100 tokens |
-|-------|--------------:|------------:|---------------:|-----------------------:|
-| **rawcode** | **1523** | 18.7 | **5.0** | **6.1** |
-| Claude default | 2658 | 18.3 | 4.5 | 3.5 |
-| "be concise" one-liner | 2739 | 17.7 | 4.3 | 3.2 |
-| verbose "engineer" persona | 3482 | 17.3 | 3.8 | 2.5 |
+| Axis | Baseline | rawcode | Paired Δ (95% CI) |
+|------|---------:|--------:|-------------------|
+| **Correctness** — pass@1 | 90.0% | 95.0% | +5.0% [0, +12.5%] · McNemar p=0.50 → **no significant change** |
+| **Output tokens** / problem | 229 | 150 | **−35%** [−138, −34] → **significant** |
 
-rawcode used the **fewest output tokens** while tying for the **highest correctness** — roughly **2× the quality-per-token** of the alternatives. The verbose personas scored *lower* on quality, and the judge independently flagged several of them for hallucinating file operations that never happened — the failure mode rawcode's honesty rules guard against.
+**Honest reading:** on this code-generation set, rawcode cut output by about a third with **no measurable change in correctness** — terseness was free here. It does *not* claim higher quality (the correctness difference is within noise), and it does *not* test long agentic loops, where Anthropic has reported that over-aggressive between-step conciseness can [hurt quality](https://www.anthropic.com/engineering/april-23-postmortem) — which is exactly why rawcode's brevity rule binds to the final response, never to investigation or verification.
+
+Caveats: HumanEval is partly present in training data (a paired A/B cancels most of this since both arms see the same problems); vanilla tests are weaker than HumanEval+; n=40 single-sample means the correctness CI is wide while the token effect is robust. Reproduce it yourself: [`bench/`](bench/).
 
 ## Install
 

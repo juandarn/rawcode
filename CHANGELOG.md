@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Added (benchmark)
+- **`bench/` — a reproducible HumanEval A/B** of the prompt vs the Claude Code baseline, graded by executable unit tests (no LLM judge). Paired design, McNemar test on correctness, bootstrap CI on tokens, reported as separate axes. Last run (n=40): pass@1 90%→95% (no significant change, McNemar p=0.50) at −35% output tokens (significant). Replaces the earlier judge-based comparison table, which used a biased single-judge protocol on self-chosen prompts.
+
 ### Fixed
 - **Guardrails now actually load.** Hook registration moved from the orphaned `guardrails/guardrails.json` to the discoverable `hooks/hooks.json`, using `${CLAUDE_PLUGIN_ROOT}` paths. They never loaded before.
 - **Hooks read the real input contract.** Scripts now parse the hook JSON from stdin (`.tool_input.file_path` / `.command`) instead of unset `CLAUDE_TOOL_INPUT_*` env vars — they were silent no-ops.
