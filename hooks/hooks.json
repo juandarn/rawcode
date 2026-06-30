@@ -6,11 +6,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/plugins/rawcode/guardrails/protect-sensitive-files.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/guardrails/protect-sensitive-files.sh"
           },
           {
             "type": "command",
-            "command": "~/.claude/plugins/rawcode/guardrails/enforce-read-before-write.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/guardrails/enforce-read-before-write.sh"
           }
         ]
       },
@@ -19,7 +19,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/plugins/rawcode/guardrails/sanitize-commit.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/guardrails/sanitize-commit.sh"
           }
         ]
       }

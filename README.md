@@ -37,6 +37,19 @@ rawcode injects a system prompt into every Claude Code session. You don't invoke
 
 Everything stays native — `/plan`, `/compact`, and all Claude Code features work as usual.
 
+## How it compares
+
+Measured, not claimed. rawcode's prompt was A/B-tested against the Claude Code baseline on **[HumanEval](https://github.com/openai/human-eval)** — a standard dataset graded by **executable unit tests** (no LLM judge, no bias). Paired design, `claude -p`, single greedy sample per problem, n=40. Correctness and length are reported as **separate axes** (a length-biased judge would conflate them):
+
+| Axis | Baseline | rawcode | Paired Δ (95% CI) |
+|------|---------:|--------:|-------------------|
+| **Correctness** — pass@1 | 90.0% | 95.0% | +5.0% [0, +12.5%] · McNemar p=0.50 → **no significant change** |
+| **Output tokens** / problem | 229 | 150 | **−35%** [−138, −34] → **significant** |
+
+**Honest reading:** on this code-generation set, rawcode cut output by about a third with **no measurable change in correctness** — terseness was free here. It does *not* claim higher quality (the correctness difference is within noise), and it does *not* test long agentic loops, where Anthropic has reported that over-aggressive between-step conciseness can [hurt quality](https://www.anthropic.com/engineering/april-23-postmortem) — which is exactly why rawcode's brevity rule binds to the final response, never to investigation or verification.
+
+Caveats: HumanEval is partly present in training data (a paired A/B cancels most of this since both arms see the same problems); vanilla tests are weaker than HumanEval+; n=40 single-sample means the correctness CI is wide while the token effect is robust. Reproduce it yourself: [`bench/`](bench/).
+
 ## Install
 
 ### Mac / Linux
@@ -69,19 +82,21 @@ Automatic protections that run without you doing anything:
 
 ## How it Works
 
-rawcode is a [Claude Code plugin](https://docs.anthropic.com/en/docs/claude-code). It has three components:
+rawcode is a [Claude Code plugin](https://docs.anthropic.com/en/docs/claude-code). It has four parts:
 
 ```
 rawcode/
-├── agents/rawcode.md        # The system prompt — this is rawcode
-├── guardrails/              # Automatic protections (hooks)
+├── output-styles/rawcode.md   # The system prompt, as an output style — this is rawcode
+├── agents/rawcode.md          # Same prompt as an opt-in subagent (invoke via Task)
+├── hooks/hooks.json           # Registers the guardrail hooks
+├── guardrails/                # Automatic protections (hook scripts)
 │   ├── protect-sensitive-files.sh
 │   ├── enforce-read-before-write.sh
 │   └── sanitize-commit.sh
-└── ui/statusline.sh         # Shows model, context %, cost, git branch
+└── ui/statusline.sh           # Shows model, context %, cost, git branch
 ```
 
-The system prompt is injected into every session. The guardrails intercept tool calls to prevent common mistakes. That's it.
+The installer activates the **output style** (`outputStyle: "rawcode"` in your settings), which applies the prompt to every main session — no invocation needed. The **hooks** auto-load from `hooks/hooks.json` once the plugin is enabled and intercept tool calls to prevent common mistakes. Prefer to opt in manually? Run `/config → Output style → rawcode`.
 
 ## Statusline
 

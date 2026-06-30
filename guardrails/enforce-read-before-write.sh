@@ -1,14 +1,13 @@
 #!/bin/bash
 # Reminds the agent to read files before modifying them
-# Used as PreToolUse hook for Write|Edit
+# Used as PreToolUse hook for Write|Edit. Reads hook JSON from stdin.
 
-# shellcheck disable=SC2154 # Variables injected by Claude Code hooks
-FILE="${CLAUDE_TOOL_INPUT_FILE_PATH}${CLAUDE_TOOL_INPUT_file_path}"
+INPUT=$(cat)
+FILE=$(printf '%s' "$INPUT" | jq -r '.tool_input.file_path // empty')
 
-# New files don't need to be read first
-if [ ! -f "$FILE" ]; then
-  exit 0
-fi
+# New or unknown files don't need to be read first
+[ -z "$FILE" ] && exit 0
+[ ! -f "$FILE" ] && exit 0
 
-echo "{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"Reminder: make sure you have read this file before modifying it. Read first to understand existing patterns and avoid duplicating code.\"}}"
+jq -nc '{hookSpecificOutput:{hookEventName:"PreToolUse",additionalContext:"Reminder: make sure you have read this file before modifying it. Read first to understand existing patterns and avoid duplicating code."}}'
 exit 0

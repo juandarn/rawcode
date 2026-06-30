@@ -10,6 +10,20 @@ if [ ! -d "$INSTALL_DIR" ]; then
 fi
 
 echo "Removing rawcode from $INSTALL_DIR..."
+
+# Revert settings merged by the installer
+SETTINGS="$HOME/.claude/settings.json"
+if command -v jq &>/dev/null && [ -f "$SETTINGS" ]; then
+  if jq \
+      '(if .outputStyle == "rawcode" then del(.outputStyle) else . end)
+       | (if (.statusLine.command // "") | test("plugins/rawcode/") then del(.statusLine) else . end)' \
+      "$SETTINGS" > "${SETTINGS}.tmp" && mv "${SETTINGS}.tmp" "$SETTINGS"; then
+    echo "Reverted output style and statusline in settings."
+  else
+    rm -f "${SETTINGS}.tmp"
+  fi
+fi
+
 rm -rf "$INSTALL_DIR"
 
 # Clean up backups
