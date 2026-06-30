@@ -30,13 +30,18 @@
   [ "$status" -eq 0 ]
 }
 
-@test "guardrails.json exists and is valid JSON" {
-  run jq . guardrails/guardrails.json
+@test "hooks.json exists and is valid JSON" {
+  run jq . hooks/hooks.json
   [ "$status" -eq 0 ]
 }
 
-@test "guardrails.json has PreToolUse hooks" {
-  run jq -e '.hooks.PreToolUse' guardrails/guardrails.json
+@test "hooks.json has PreToolUse hooks" {
+  run jq -e '.hooks.PreToolUse' hooks/hooks.json
+  [ "$status" -eq 0 ]
+}
+
+@test "hook commands resolve via CLAUDE_PLUGIN_ROOT" {
+  run jq -e '[.. | .command? | select(.)] | all(startswith("${CLAUDE_PLUGIN_ROOT}"))' hooks/hooks.json
   [ "$status" -eq 0 ]
 }
 
@@ -48,6 +53,12 @@
   head -1 agents/rawcode.md | grep -q "^---"
   grep -q "^name: rawcode" agents/rawcode.md
   grep -q "^description:" agents/rawcode.md
+}
+
+@test "rawcode output style exists with valid frontmatter" {
+  [ -f output-styles/rawcode.md ]
+  grep -q "^name: rawcode" output-styles/rawcode.md
+  grep -q "^keep-coding-instructions: true" output-styles/rawcode.md
 }
 
 @test "all guardrail scripts are executable" {
@@ -70,6 +81,7 @@
   [ ! -f agents/titler.md ]
 }
 
-@test "no old hooks directory exists" {
-  [ ! -d hooks ]
+@test "hooks directory is wired" {
+  [ -f hooks/hooks.json ]
+  [ ! -f guardrails/guardrails.json ]
 }

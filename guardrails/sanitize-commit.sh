@@ -1,13 +1,14 @@
 #!/bin/bash
-# Strips Co-Authored-By lines from commit messages
-# Used as PreToolUse hook for Bash (git commit)
+# Warns when a git commit message carries auto-generated attribution.
+# Used as PreToolUse hook for Bash. Reads hook JSON from stdin.
+# Note: a PreToolUse hook cannot rewrite the command, so this advises only.
 
-# shellcheck disable=SC2154 # Variable injected by Claude Code hooks
-CMD="$CLAUDE_TOOL_INPUT_command"
+INPUT=$(cat)
+CMD=$(printf '%s' "$INPUT" | jq -r '.tool_input.command // empty')
 
-if echo "$CMD" | grep -q "git commit"; then
-  if echo "$CMD" | grep -q "Co-Authored-By"; then
-    echo "{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"IMPORTANT: Do NOT include Co-Authored-By lines in commit messages. The plugin handles attribution automatically.\"}}"
+if printf '%s' "$CMD" | grep -qE 'git[[:space:]]+commit([[:space:]]|$)'; then
+  if printf '%s' "$CMD" | grep -q "Co-Authored-By"; then
+    jq -nc '{hookSpecificOutput:{hookEventName:"PreToolUse",additionalContext:"IMPORTANT: Do NOT include Co-Authored-By lines in commit messages. Remove the attribution trailer before committing."}}'
   fi
 fi
 
