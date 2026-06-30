@@ -37,6 +37,19 @@ rawcode injects a system prompt into every Claude Code session. You don't invoke
 
 Everything stays native — `/plan`, `/compact`, and all Claude Code features work as usual.
 
+## How it compares
+
+rawcode injected as a system prompt, measured head-to-head against the Claude Code default and other "be concise" / persona setups (`claude -p`, same model, blind quality judge). Small sample — directional, not a benchmark suite:
+
+| Setup | Output tokens | Quality /10 | Correctness /5 | Quality per 100 tokens |
+|-------|--------------:|------------:|---------------:|-----------------------:|
+| **rawcode** | **1523** | 18.7 | **5.0** | **6.1** |
+| Claude default | 2658 | 18.3 | 4.5 | 3.5 |
+| "be concise" one-liner | 2739 | 17.7 | 4.3 | 3.2 |
+| verbose "engineer" persona | 3482 | 17.3 | 3.8 | 2.5 |
+
+rawcode used the **fewest output tokens** while tying for the **highest correctness** — roughly **2× the quality-per-token** of the alternatives. The verbose personas scored *lower* on quality, and the judge independently flagged several of them for hallucinating file operations that never happened — the failure mode rawcode's honesty rules guard against.
+
 ## Install
 
 ### Mac / Linux
