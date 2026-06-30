@@ -137,10 +137,14 @@ fi
 # ── Clone ───────────────────────────────────────────
 step "Downloading rawcode..."
 git clone --depth 1 "https://github.com/$REPO.git" "$INSTALL_DIR" 2>/dev/null &
-spin $! "Cloning repository..."
-wait $!
+CLONE_PID=$!
+spin "$CLONE_PID" "Cloning repository..."
+set +e
+wait "$CLONE_PID"
+CLONE_RC=$?
+set -e
 
-if [ ! -d "$INSTALL_DIR" ]; then
+if [ "$CLONE_RC" -ne 0 ] || [ ! -d "$INSTALL_DIR" ]; then
   fail "Download failed. Check your internet connection."
   # Restore backup if update failed
   if [ -n "$BACKUP" ] && [ -d "$BACKUP" ]; then
@@ -158,6 +162,28 @@ chmod +x "$INSTALL_DIR/guardrails/"*.sh 2>/dev/null
 chmod +x "$INSTALL_DIR/setup/"*.sh 2>/dev/null
 ok "Scripts configured"
 
+# ── Activate output style, statusline, deny-list ────
+# Hooks auto-load from hooks/hooks.json once the plugin is enabled, but the
+# output style, statusline and deny-list live in user settings — merge them in.
+SETTINGS="$HOME/.claude/settings.json"
+if command -v jq &>/dev/null; then
+  [ -f "$SETTINGS" ] || echo '{}' > "$SETTINGS"
+  cp "$SETTINGS" "${SETTINGS}.rawcode.bak" 2>/dev/null
+  if jq \
+      --slurpfile rc "$INSTALL_DIR/settings.json" \
+      '.outputStyle = "rawcode"
+       | .statusLine = $rc[0].statusLine
+       | .permissions.deny = ((.permissions.deny // []) + ($rc[0].permissions.deny // []) | unique)' \
+      "$SETTINGS" > "${SETTINGS}.tmp" && mv "${SETTINGS}.tmp" "$SETTINGS"; then
+    ok "Output style, statusline and deny-list activated"
+  else
+    rm -f "${SETTINGS}.tmp"
+    warn "Could not merge settings — enable manually: /config → Output style → rawcode"
+  fi
+else
+  warn "jq not found — enable manually: /config → Output style → rawcode"
+fi
+
 # ── Verify installation ────────────────────────────
 INSTALLED_VER=$(get_local_version)
 if [ -f "$INSTALL_DIR/agents/rawcode.md" ] && [ -f "$INSTALL_DIR/settings.json" ]; then
@@ -168,7 +194,11 @@ else
 fi
 
 # ── Clean old backups (keep last 2) ────────────────
-mapfile -t BACKUPS < <(ls -dt "$PLUGIN_DIR/rawcode.backup."* 2>/dev/null || true)
+# Portable (no mapfile — absent in macOS stock bash 3.2)
+BACKUPS=()
+while IFS= read -r line; do
+  [ -n "$line" ] && BACKUPS+=("$line")
+done < <(ls -dt "$PLUGIN_DIR/rawcode.backup."* 2>/dev/null || true)
 if [ ${#BACKUPS[@]} -gt 2 ]; then
   for old in "${BACKUPS[@]:2}"; do
     rm -rf "$old"
