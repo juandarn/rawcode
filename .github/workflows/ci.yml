@@ -18,18 +18,18 @@ jobs:
           jq . settings.json
           echo "Validating plugin.json..."
           jq . .claude-plugin/plugin.json
-          echo "Validating guardrails.json..."
-          jq . guardrails/guardrails.json
+          echo "Validating hooks.json..."
+          jq . hooks/hooks.json
 
-      - name: Validate agent frontmatter
+      - name: Validate agent and output-style frontmatter
         run: |
-          for f in agents/*.md; do
+          for f in agents/*.md output-styles/*.md; do
             echo "Checking $f..."
             head -1 "$f" | grep -q "^---" || (echo "FAIL: $f missing frontmatter" && exit 1)
             grep -q "^name:" "$f" || (echo "FAIL: $f missing name field" && exit 1)
             grep -q "^description:" "$f" || (echo "FAIL: $f missing description field" && exit 1)
           done
-          echo "All agents valid."
+          echo "All agents and output styles valid."
 
   shellcheck:
     runs-on: ubuntu-latest
