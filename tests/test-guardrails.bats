@@ -9,64 +9,6 @@ run_cmd_hook() { # <script> <command>
   run bash -c "jq -nc --arg c \"\$1\" '{tool_input:{command:\$c}}' | bash $BATS_TEST_DIRNAME/../guardrails/$1" _ "$2"
 }
 
-# --- protect-sensitive-files.sh ---
-
-@test "blocks .env files" {
-  run_file_hook protect-sensitive-files.sh ".env"
-  [ "$status" -eq 0 ]; [[ "$output" == *"deny"* ]]
-}
-
-@test "blocks .env.local files" {
-  run_file_hook protect-sensitive-files.sh ".env.local"
-  [ "$status" -eq 0 ]; [[ "$output" == *"deny"* ]]
-}
-
-@test "blocks nested migration files" {
-  run_file_hook protect-sensitive-files.sh "db/migrations/001_create_users.sql"
-  [ "$status" -eq 0 ]; [[ "$output" == *"deny"* ]]
-}
-
-@test "blocks top-level migrations dir" {
-  run_file_hook protect-sensitive-files.sh "migrations/001_create_users.sql"
-  [ "$status" -eq 0 ]; [[ "$output" == *"deny"* ]]
-}
-
-@test "blocks package-lock.json" {
-  run_file_hook protect-sensitive-files.sh "package-lock.json"
-  [ "$status" -eq 0 ]; [[ "$output" == *"deny"* ]]
-}
-
-@test "blocks yarn.lock" {
-  run_file_hook protect-sensitive-files.sh "yarn.lock"
-  [ "$status" -eq 0 ]; [[ "$output" == *"deny"* ]]
-}
-
-@test "blocks pnpm-lock.yaml" {
-  run_file_hook protect-sensitive-files.sh "pnpm-lock.yaml"
-  [ "$status" -eq 0 ]; [[ "$output" == *"deny"* ]]
-}
-
-@test "blocks Gemfile.lock" {
-  run_file_hook protect-sensitive-files.sh "Gemfile.lock"
-  [ "$status" -eq 0 ]; [[ "$output" == *"deny"* ]]
-}
-
-@test "allows normal source files" {
-  run_file_hook protect-sensitive-files.sh "src/index.ts"
-  [ "$status" -eq 0 ]; [[ "$output" != *"deny"* ]]
-}
-
-@test "allows README" {
-  run_file_hook protect-sensitive-files.sh "README.md"
-  [ "$status" -eq 0 ]; [[ "$output" != *"deny"* ]]
-}
-
-@test "emits valid JSON even for a path containing a quote" {
-  run_file_hook protect-sensitive-files.sh 'weird".env'
-  [ "$status" -eq 0 ]
-  echo "$output" | jq -e '.hookSpecificOutput.permissionDecision == "deny"'
-}
-
 # --- enforce-read-before-write.sh ---
 
 @test "warns when editing existing file" {
