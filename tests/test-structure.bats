@@ -61,6 +61,25 @@
   grep -q "^keep-coding-instructions: true" output-styles/rawcode.md
 }
 
+@test "plugin.json declares the skills directory" {
+  run jq -e '.skills == "./skills/"' .claude-plugin/plugin.json
+  [ "$status" -eq 0 ]
+}
+
+@test "rc-tdd skill exists with gentleman-format frontmatter" {
+  [ -f skills/rc-tdd/SKILL.md ]
+  grep -q "^name: rc-tdd" skills/rc-tdd/SKILL.md
+  grep -q "^description:" skills/rc-tdd/SKILL.md
+  grep -q "user-invocable:" skills/rc-tdd/SKILL.md
+}
+
+@test "every skill has a name and description" {
+  for f in skills/*/SKILL.md; do
+    grep -q "^name:" "$f" || (echo "FAIL: $f missing name" && exit 1)
+    grep -q "^description:" "$f" || (echo "FAIL: $f missing description" && exit 1)
+  done
+}
+
 @test "all guardrail scripts are executable" {
   for script in guardrails/*.sh; do
     [ -x "$script" ]
