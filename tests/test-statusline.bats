@@ -42,14 +42,16 @@
   INPUT='{"model":{"display_name":"Sonnet"},"context_window":{"used_percentage":73}}'
   run bash -c "printf '%s' '$INPUT' | bash ui/statusline.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"ctx:73%"* ]]
+  [[ "$output" == *"73%"* ]]
+  [[ "$output" == *"▓"* ]]
 }
 
-@test "missing context percentage is omitted, not shown as 0" {
+@test "missing context percentage is omitted, no bar shown" {
   INPUT='{"model":{"display_name":"Sonnet"}}'
   run bash -c "printf '%s' '$INPUT' | bash ui/statusline.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" != *"ctx:"* ]]
+  [[ "$output" != *"ctx"* ]]
+  [[ "$output" != *"▓"* ]]
 }
 
 @test "malformed JSON does not crash" {
