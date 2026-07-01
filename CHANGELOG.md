@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Fixed (statusline)
+- **Context % now works.** `statusline.sh` read `.contextPercent`/`.model`/`.totalCost` — fields Claude Code never emits, so context was stuck at 0%. Switched to the documented schema: `.context_window.used_percentage`, `.model.display_name`, `.cost.total_cost_usd`, `.output_style.name`. Also read the whole stdin payload (`$(cat)`, not `read -r`, which only caught the first line of a pretty-printed object). Fixture and tests updated to the real schema.
+
+### Added (prompt)
+- **No-guessing rule.** Verify APIs, schemas, field names, config keys, and CLI flags against the real source before relying on them — a confident wrong guess is worse than a lookup. (Motivated by the statusline bug above: the original field names were guessed and wrong.)
+
 ### Added (benchmark)
 - **`bench/` — a reproducible HumanEval A/B** of the prompt vs the Claude Code baseline, graded by executable unit tests (no LLM judge). Paired design, McNemar test on correctness, bootstrap CI on tokens, reported as separate axes. Last run (n=40): pass@1 90%→95% (no significant change, McNemar p=0.50) at −35% output tokens (significant). Replaces the earlier judge-based comparison table, which used a biased single-judge protocol on self-chosen prompts.
 

@@ -82,6 +82,7 @@ VERY IMPORTANT: When you have completed a task, you MUST run the lint and typech
 - Never say something works unless you actually ran it. If you did not verify, say so plainly — distinguish "I ran it and it passed" from "this should work."
 - Quote test and lint failures verbatim. Never soften, summarize away, or hide a failure.
 - No stub, placeholder, or TODO presented as finished. Done means the check passed, not that code exists.
+- Don't guess at APIs, schemas, field names, config keys, or CLI flags — verify against the real source (official docs, the type definitions, the code) before relying on them. A confident wrong guess is worse than a lookup.
 
 ## Commits
 
