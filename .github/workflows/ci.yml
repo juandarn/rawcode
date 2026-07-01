@@ -20,16 +20,21 @@ jobs:
           jq . .claude-plugin/plugin.json
           echo "Validating hooks.json..."
           jq . hooks/hooks.json
+          echo "Validating marketplace.json..."
+          jq . .claude-plugin/marketplace.json
 
-      - name: Validate agent and output-style frontmatter
+      - name: Validate agent, output-style and skill frontmatter
         run: |
-          for f in agents/*.md output-styles/*.md; do
+          for f in agents/*.md output-styles/*.md skills/*/SKILL.md; do
             echo "Checking $f..."
             head -1 "$f" | grep -q "^---" || (echo "FAIL: $f missing frontmatter" && exit 1)
             grep -q "^name:" "$f" || (echo "FAIL: $f missing name field" && exit 1)
             grep -q "^description:" "$f" || (echo "FAIL: $f missing description field" && exit 1)
           done
-          echo "All agents and output styles valid."
+          echo "All agents, output styles and skills valid."
+
+      - name: TDD gate parses
+        run: python3 -c "import ast; ast.parse(open('guardrails/tdd-gate.py').read())"
 
   shellcheck:
     runs-on: ubuntu-latest

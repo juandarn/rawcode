@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Added (framework — phases 2-4 + adoption)
+- **`skills/rc-bench`** — runs the `bench/` pass@1 A/B as a verify tool; composes with `sdd-verify`. Documents the grading-artifact trap (aggressive personas return terse confirmations a naive extractor miscounts).
+- **`docs/COMPOSE.md`** — cookbook for using rawcode + Gentle AI together (install order, output-style slot, per-phase composition, turning the TDD gate off).
+- **`.claude-plugin/marketplace.json`** — install via `claude plugin marketplace add juandarn/rawcode`. README leads with the marketplace path and a Framework section.
+- CI now validates `marketplace.json`, skill frontmatter, and that the TDD gate parses.
+
 ### Added (framework — phase 1)
 - **rawcode as a Gentle AI extension.** `docs/FRAMEWORK.md` plans the merge: reuse Gentle AI's SDD/memory, contribute what it lacks. Works standalone OR as an extension — no hard dependency.
 - **Strict TDD by default** via a `tdd-gate` Stop hook (`guardrails/tdd-gate.py`): if code changed this turn and no test ran, it blocks once and asks for the test. Escapes: an "urgent"/"hotfix"/"skip tdd" word in the prompt, or a `.rawcode-no-tdd` marker. Blocks at most once per turn — never loops.

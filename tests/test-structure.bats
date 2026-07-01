@@ -71,6 +71,11 @@
   [ "$status" -eq 0 ]
 }
 
+@test "marketplace.json is valid and lists the rawcode plugin" {
+  run jq -e '.plugins | map(.name) | index("rawcode")' .claude-plugin/marketplace.json
+  [ "$status" -eq 0 ]
+}
+
 @test "rc-tdd skill exists with gentleman-format frontmatter" {
   [ -f skills/rc-tdd/SKILL.md ]
   grep -q "^name: rc-tdd" skills/rc-tdd/SKILL.md

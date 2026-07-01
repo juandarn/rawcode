@@ -1,0 +1,23 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "rawcode",
+  "id": "rawcode",
+  "description": "OpenCode philosophy for Claude Code — concise, root-cause, minimal, secure, verified. Works standalone or as a Gentle AI extension.",
+  "owner": {
+    "name": "juandarn"
+  },
+  "plugins": [
+    {
+      "name": "rawcode",
+      "source": "./",
+      "description": "A concise/root-cause/honest coding persona + guardrail hooks + a strict TDD gate + a pass@1 benchmark. Minimal by default; composes with Gentle AI's SDD flow.",
+      "version": "2.0.0",
+      "author": {
+        "name": "juandarn"
+      },
+      "keywords": ["workflow", "rawcode", "system-prompt", "code-quality", "security", "tdd"],
+      "category": "workflow",
+      "homepage": "https://github.com/juandarn/rawcode"
+    }
+  ]
+}
