@@ -1,5 +1,6 @@
 #!/usr/bin/env bats
-# Tests for statusline rendering
+# Tests for statusline rendering. Input schema per Claude Code docs:
+# model.display_name, context_window.used_percentage, cost.total_cost_usd, output_style.name
 
 @test "empty input shows rawcode logo" {
   run bash -c 'echo "" | bash ui/statusline.sh'
@@ -8,8 +9,7 @@
 }
 
 @test "full input renders all segments" {
-  INPUT='{"model":"claude-sonnet-4-6","contextPercent":45,"totalCost":0.12,"agentName":"rawcode"}'
-  run bash -c "echo '$INPUT' | bash ui/statusline.sh"
+  run bash -c "bash ui/statusline.sh < tests/fixtures/statusline-input.json"
   [ "$status" -eq 0 ]
   [[ "$output" == *"rawcode"* ]]
   [[ "$output" == *"sonnet"* ]]
@@ -17,18 +17,39 @@
   [[ "$output" == *"0.12"* ]]
 }
 
+@test "renders the multi-line (pretty-printed) fixture, not just first line" {
+  # read -r would capture only "{"; $(cat) must consume the whole object
+  run bash -c "bash ui/statusline.sh < tests/fixtures/statusline-input.json"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"45"* ]]
+}
+
 @test "opus model shortens correctly" {
-  INPUT='{"model":"claude-opus-4-6","contextPercent":10}'
-  run bash -c "echo '$INPUT' | bash ui/statusline.sh"
+  INPUT='{"model":{"display_name":"Opus"},"context_window":{"used_percentage":10}}'
+  run bash -c "printf '%s' '$INPUT' | bash ui/statusline.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"opus"* ]]
 }
 
 @test "haiku model shortens correctly" {
-  INPUT='{"model":"claude-haiku-4-5","contextPercent":10}'
-  run bash -c "echo '$INPUT' | bash ui/statusline.sh"
+  INPUT='{"model":{"display_name":"Haiku 4.5"},"context_window":{"used_percentage":10}}'
+  run bash -c "printf '%s' '$INPUT' | bash ui/statusline.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"haiku"* ]]
+}
+
+@test "context percentage is rendered from context_window.used_percentage" {
+  INPUT='{"model":{"display_name":"Sonnet"},"context_window":{"used_percentage":73}}'
+  run bash -c "printf '%s' '$INPUT' | bash ui/statusline.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ctx:73%"* ]]
+}
+
+@test "missing context percentage is omitted, not shown as 0" {
+  INPUT='{"model":{"display_name":"Sonnet"}}'
+  run bash -c "printf '%s' '$INPUT' | bash ui/statusline.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"ctx:"* ]]
 }
 
 @test "malformed JSON does not crash" {

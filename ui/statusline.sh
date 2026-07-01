@@ -1,91 +1,54 @@
 #!/bin/bash
-# rawcode powerline status line for Claude Code
-# Uses ANSI colors and unicode chars for a clean look
+# rawcode powerline status line for Claude Code.
+# Reads the statusLine JSON from stdin. Field names per the Claude Code docs:
+# https://code.claude.com/docs/en/statusline
+# model.display_name | context_window.used_percentage | cost.total_cost_usd | output_style.name
 
-read -r INPUT
+INPUT=$(cat)
 
-if [ -z "$INPUT" ]; then
+if [ -z "$INPUT" ] || ! command -v jq &>/dev/null; then
   echo -e "\033[48;5;236m\033[38;5;203m  rawcode \033[0m"
   exit 0
 fi
 
-# Parse JSON fields — use jq if available, fallback to grep/sed
-if command -v jq &>/dev/null; then
-  MODEL=$(echo "$INPUT" | jq -r '.model // empty')
-  CONTEXT_PERCENT=$(echo "$INPUT" | jq -r '.contextPercent // empty')
-  COST=$(echo "$INPUT" | jq -r '.totalCost // empty')
-  AGENT=$(echo "$INPUT" | jq -r '.agentName // empty')
-else
-  get_field() {
-    echo "$INPUT" | grep -o "\"$1\":[^,}]*" | head -1 | sed 's/.*://' | tr -d ' "}'
-  }
-  MODEL=$(get_field "model")
-  CONTEXT_PERCENT=$(get_field "contextPercent")
-  COST=$(get_field "totalCost")
-  AGENT=$(get_field "agentName")
-fi
+MODEL=$(printf '%s' "$INPUT" | jq -r '.model.display_name // empty')
+CTX=$(printf '%s' "$INPUT" | jq -r '.context_window.used_percentage // empty' | cut -d. -f1)
+COST=$(printf '%s' "$INPUT" | jq -r '.cost.total_cost_usd // empty')
+STYLE=$(printf '%s' "$INPUT" | jq -r '.output_style.name // empty')
 
-# Shorten model name
-case "$MODEL" in
+# Shorten model name (display_name is like "Opus", "Sonnet 4.5", "Haiku 4.5")
+case "$(printf '%s' "$MODEL" | tr '[:upper:]' '[:lower:]')" in
   *opus*) M="opus" ;;
   *sonnet*) M="sonnet" ;;
   *haiku*) M="haiku" ;;
-  *) M="${MODEL:-?}" ;;
+  *) M="$MODEL" ;;
 esac
 
-# Context color (green < 60%, yellow < 80%, red >= 80%)
-CTX="${CONTEXT_PERCENT:-0}"
-if [ "$CTX" != "null" ] && [ -n "$CTX" ]; then
-  if [ "$CTX" -ge 80 ] 2>/dev/null; then
-    CTX_COLOR="38;5;203"  # red
-  elif [ "$CTX" -ge 60 ] 2>/dev/null; then
-    CTX_COLOR="38;5;220"  # yellow
-  else
-    CTX_COLOR="38;5;114"  # green
-  fi
+# Context color: green < 60, yellow 60-79, red >= 80
+CTX_COLOR="38;5;114"
+if [ -n "$CTX" ] && [ "$CTX" -eq "$CTX" ] 2>/dev/null; then
+  if [ "$CTX" -ge 80 ]; then CTX_COLOR="38;5;203"
+  elif [ "$CTX" -ge 60 ]; then CTX_COLOR="38;5;220"; fi
 else
   CTX=""
-  CTX_COLOR="38;5;114"
 fi
 
-# Git branch
 BRANCH=$(git branch --show-current 2>/dev/null)
 
-# Build segments
-# Colors: bg=236(dark gray), 238(medium) | fg: 203(red), 114(green), 220(yellow), 75(blue), 252(white)
-SEG=""
+SEG="\033[48;5;203m\033[38;5;255m rawcode \033[48;5;238m\033[38;5;203m\033[0m"
 
-# rawcode logo
-SEG+="\033[48;5;203m\033[38;5;255m rawcode \033[48;5;238m\033[38;5;203m\033[0m"
-
-# Agent (if active)
-if [ -n "$AGENT" ] && [ "$AGENT" != "null" ]; then
-  SEG+="\033[48;5;238m\033[38;5;75m @${AGENT} \033[48;5;236m\033[38;5;238m\033[0m"
+if [ -n "$STYLE" ]; then
+  SEG+="\033[48;5;238m\033[38;5;75m ${STYLE} \033[48;5;236m\033[38;5;238m\033[0m"
 else
   SEG+="\033[48;5;238m\033[38;5;238m\033[48;5;236m\033[0m"
 fi
 
-# Model
-if [ -n "$M" ] && [ "$M" != "?" ]; then
-  SEG+="\033[48;5;236m\033[38;5;252m  ${M} "
+[ -n "$M" ] && SEG+="\033[48;5;236m\033[38;5;252m  ${M} "
+[ -n "$CTX" ] && SEG+="\033[48;5;236m\033[${CTX_COLOR}m ctx:${CTX}% "
+if [ -n "$COST" ]; then
+  SEG+="\033[48;5;236m\033[38;5;220m \$$(printf '%.2f' "$COST" 2>/dev/null || echo "$COST") "
 fi
+[ -n "$BRANCH" ] && SEG+="\033[48;5;236m\033[38;5;114m  ${BRANCH} "
 
-# Context
-if [ -n "$CTX" ] && [ "$CTX" != "null" ]; then
-  SEG+="\033[48;5;236m\033[${CTX_COLOR}m ctx:${CTX}% "
-fi
-
-# Cost
-if [ -n "$COST" ] && [ "$COST" != "null" ]; then
-  SEG+="\033[48;5;236m\033[38;5;220m \$${COST} "
-fi
-
-# Git branch
-if [ -n "$BRANCH" ]; then
-  SEG+="\033[48;5;236m\033[38;5;114m  ${BRANCH} "
-fi
-
-# End
 SEG+="\033[0m\033[38;5;236m\033[0m"
-
 echo -e "$SEG"
