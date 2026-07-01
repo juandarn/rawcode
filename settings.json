@@ -1,18 +1,7 @@
 {
   "agent": "rawcode",
   "permissions": {
-    "deny": [
-      "Write(.env*)",
-      "Edit(.env*)",
-      "Write(**/migrations/**)",
-      "Edit(**/migrations/**)",
-      "Write(*package-lock.json)",
-      "Edit(*package-lock.json)",
-      "Write(*yarn.lock)",
-      "Edit(*yarn.lock)",
-      "Write(*pnpm-lock.yaml)",
-      "Edit(*pnpm-lock.yaml)"
-    ]
+    "deny": []
   },
   "statusLine": {
     "type": "command",

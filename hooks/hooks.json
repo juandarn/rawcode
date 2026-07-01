@@ -6,10 +6,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/guardrails/protect-sensitive-files.sh"
-          },
-          {
-            "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/guardrails/enforce-read-before-write.sh"
           }
         ]
