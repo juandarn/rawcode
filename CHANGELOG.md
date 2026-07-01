@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Added (framework — phase 1)
+- **rawcode as a Gentle AI extension.** `docs/FRAMEWORK.md` plans the merge: reuse Gentle AI's SDD/memory, contribute what it lacks. Works standalone OR as an extension — no hard dependency.
+- **Strict TDD by default** via a `tdd-gate` Stop hook (`guardrails/tdd-gate.py`): if code changed this turn and no test ran, it blocks once and asks for the test. Escapes: an "urgent"/"hotfix"/"skip tdd" word in the prompt, or a `.rawcode-no-tdd` marker. Blocks at most once per turn — never loops.
+- **`skills/rc-tdd`** — gentleman-format red→green→refactor skill that composes with `sdd-apply`; `plugin.json` declares the skills dir. 8 gate tests + structure tests (51/51 bats).
+
 ### Fixed (statusline)
 - **Context % now works.** `statusline.sh` read `.contextPercent`/`.model`/`.totalCost` — fields Claude Code never emits, so context was stuck at 0%. Switched to the documented schema: `.context_window.used_percentage`, `.model.display_name`, `.cost.total_cost_usd`, `.output_style.name`. Also read the whole stdin payload (`$(cat)`, not `read -r`, which only caught the first line of a pretty-printed object). Fixture and tests updated to the real schema.
 

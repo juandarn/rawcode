@@ -41,7 +41,12 @@
 }
 
 @test "hook commands resolve via CLAUDE_PLUGIN_ROOT" {
-  run jq -e '[.. | .command? | select(.)] | all(startswith("${CLAUDE_PLUGIN_ROOT}"))' hooks/hooks.json
+  run jq -e '[.. | .command? | select(.)] | all(contains("${CLAUDE_PLUGIN_ROOT}"))' hooks/hooks.json
+  [ "$status" -eq 0 ]
+}
+
+@test "Stop hook wires the TDD gate" {
+  run jq -e '.hooks.Stop[0].hooks[0].command | contains("tdd-gate.py")' hooks/hooks.json
   [ "$status" -eq 0 ]
 }
 

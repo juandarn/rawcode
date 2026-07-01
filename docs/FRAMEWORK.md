@@ -5,6 +5,21 @@ gentleman-programming skill set: `sdd-*`, `_shared/`, engram, the Gentleman
 output style) already does that well. rawcode plugs into it as an **extension**:
 it contributes the pieces Gentle AI doesn't have, and reuses everything it does.
 
+## Works standalone OR as an extension
+
+rawcode has **no hard dependency** on Gentle AI. Installed alone, its persona,
+guardrails, `bench/`, and the strict TDD gate all work. Installed alongside
+Gentle AI, its skills follow the same conventions and compose with `sdd-*`
+instead of duplicating them — degrading gracefully either way.
+
+## TDD is strict by default
+
+TDD is on for every code change, enforced mechanically by the `tdd-gate` Stop
+hook — not left to the model's goodwill. It is skipped only when the user
+explicitly signals urgency ("urgent", "hotfix", "skip tdd") or drops a
+`.rawcode-no-tdd` marker. The gate blocks at most once per turn, so it nudges
+without ever looping.
+
 ## What each side owns
 
 | Concern | Owned by | rawcode's role |

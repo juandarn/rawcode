@@ -15,12 +15,19 @@ A rawcode extension for Gentle AI. It turns "add X" into a verifiable loop so
 that *done* means a test passed, not that code exists. It does not replace
 `sdd-apply` — it supplies the discipline `sdd-apply` runs under.
 
+## Default: strict
+
+TDD is **on by default** for any code change. The `tdd-gate` Stop hook enforces
+it: if you change code and end the turn without running a test, it blocks once
+and asks for the test. You only skip it when the user explicitly says so —
+"urgent", "hotfix", "skip tdd" (or a `.rawcode-no-tdd` marker file). Pure
+refactors under existing coverage, config, and docs are not code changes and
+don't trigger the gate.
+
 ## When to use
 
 - Implementing or fixing a behavior that a test can pin down.
 - Any `sdd-apply` task whose success criterion is checkable by code.
-
-Skip for pure refactors with existing coverage, config, or docs.
 
 ## The loop
 
