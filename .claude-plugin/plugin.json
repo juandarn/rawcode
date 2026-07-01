@@ -6,5 +6,6 @@
     "name": "juandarn"
   },
   "keywords": ["workflow", "rawcode", "system-prompt", "code-quality", "security"],
+  "skills": "./skills/",
   "license": "MIT"
 }

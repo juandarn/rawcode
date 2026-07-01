@@ -23,6 +23,16 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/guardrails/tdd-gate.py\" 2>/dev/null || true"
+          }
+        ]
+      }
     ]
   }
 }

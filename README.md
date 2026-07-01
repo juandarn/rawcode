@@ -52,7 +52,17 @@ Caveats: HumanEval is partly present in training data (a paired A/B cancels most
 
 ## Install
 
-### Mac / Linux
+### Marketplace (recommended)
+
+```bash
+claude plugin marketplace add juandarn/rawcode
+claude plugin install rawcode@rawcode
+```
+
+Guardrails and the TDD gate load automatically. To turn on the terse coding
+persona: `/output-style rawcode`.
+
+### Mac / Linux (script)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/juandarn/rawcode/master/setup/install.sh | bash
@@ -69,6 +79,15 @@ irm https://raw.githubusercontent.com/juandarn/rawcode/master/setup/install.ps1 
 ```bash
 git clone https://github.com/juandarn/rawcode.git ~/.claude/plugins/rawcode
 ```
+
+## Framework
+
+rawcode is minimal by default, but it grows into a coding framework when you want
+one — a strict TDD gate, a `rc-tdd` red→green→refactor skill, and a real `bench/`
+pass@1 harness. It works **standalone or as an extension of [Gentle AI](https://github.com/Gentleman-Programming)**,
+composing with its SDD flow instead of duplicating it. See
+[docs/FRAMEWORK.md](docs/FRAMEWORK.md) for the architecture and
+[docs/COMPOSE.md](docs/COMPOSE.md) for using the two together.
 
 ## Guardrails
 

@@ -41,7 +41,12 @@
 }
 
 @test "hook commands resolve via CLAUDE_PLUGIN_ROOT" {
-  run jq -e '[.. | .command? | select(.)] | all(startswith("${CLAUDE_PLUGIN_ROOT}"))' hooks/hooks.json
+  run jq -e '[.. | .command? | select(.)] | all(contains("${CLAUDE_PLUGIN_ROOT}"))' hooks/hooks.json
+  [ "$status" -eq 0 ]
+}
+
+@test "Stop hook wires the TDD gate" {
+  run jq -e '.hooks.Stop[0].hooks[0].command | contains("tdd-gate.py")' hooks/hooks.json
   [ "$status" -eq 0 ]
 }
 
@@ -59,6 +64,30 @@
   [ -f output-styles/rawcode.md ]
   grep -q "^name: rawcode" output-styles/rawcode.md
   grep -q "^keep-coding-instructions: true" output-styles/rawcode.md
+}
+
+@test "plugin.json declares the skills directory" {
+  run jq -e '.skills == "./skills/"' .claude-plugin/plugin.json
+  [ "$status" -eq 0 ]
+}
+
+@test "marketplace.json is valid and lists the rawcode plugin" {
+  run jq -e '.plugins | map(.name) | index("rawcode")' .claude-plugin/marketplace.json
+  [ "$status" -eq 0 ]
+}
+
+@test "rc-tdd skill exists with gentleman-format frontmatter" {
+  [ -f skills/rc-tdd/SKILL.md ]
+  grep -q "^name: rc-tdd" skills/rc-tdd/SKILL.md
+  grep -q "^description:" skills/rc-tdd/SKILL.md
+  grep -q "user-invocable:" skills/rc-tdd/SKILL.md
+}
+
+@test "every skill has a name and description" {
+  for f in skills/*/SKILL.md; do
+    grep -q "^name:" "$f" || (echo "FAIL: $f missing name" && exit 1)
+    grep -q "^description:" "$f" || (echo "FAIL: $f missing description" && exit 1)
+  done
 }
 
 @test "all guardrail scripts are executable" {
