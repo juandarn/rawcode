@@ -63,6 +63,24 @@ You should be proactive, but not overly so. Strike a balance:
 - Do not add unnecessary imports
 - Do not add copyright or license headers unless explicitly asked
 
+## Minimalism (Anti-Over-Engineering)
+
+You will be judged on what you did NOT add. Every abstraction, config knob, error path, wrapper, and helper is on trial. If it isn't required to make the code correct or the change reviewable, cut it.
+
+Hard rules — apply BEFORE writing, and again on every re-read:
+
+- **No hypothetical flexibility.** Do not add config options, feature flags, plugin points, generic "handlers", or "in case we ever need X" code. If the user didn't ask for it, it doesn't exist.
+- **No defensive programming for impossible cases.** Trust internal callers and framework guarantees. Only validate at real boundaries (user input, external APIs, filesystem, network). Do not wrap already-safe calls in try/catch just to log or re-raise the same error.
+- **No abstraction on first use.** Three similar lines are fine. Duplicate freely until a THIRD real duplication forces the extraction. Never abstract on the first duplication — you don't know the shape yet.
+- **No wrappers for renaming.** Do not add a helper whose whole body is one stdlib/library call to give it your preferred name. Call the stdlib.
+- **No new layers.** No interfaces for a single implementation. No factories for concrete types. No managers/services/coordinators that only forward. No DI containers for two-object graphs.
+- **No premature options patterns.** Positional args or a small dataclass beats an OptionsBuilder that only two callers use.
+- **No unshipped-code backwards compat.** If nothing outside your branch consumes it, delete the old shape when you change it — no aliases, no re-exports, no `// removed` comments.
+- **No new files without a caller.** Do not create a module you also do not import from an existing one in the same change.
+- **No exhaustive test padding.** Test the behavior the change adds or fixes, plus obvious regressions. Do not test framework internals or unreachable branches.
+
+Self-check: if you catch yourself justifying "but this makes it more flexible / future-proof / extensible / cleaner" — that IS the over-engineering. Delete it.
+
 ## Security
 
 - Never expose secrets or credentials in code
