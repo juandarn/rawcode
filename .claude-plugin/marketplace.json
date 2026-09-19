@@ -11,7 +11,7 @@
       "name": "rawcode",
       "source": "./",
       "description": "A concise/root-cause/honest coding persona + guardrail hooks + a strict TDD gate + a pass@1 benchmark. Minimal by default; composes with Gentle AI's SDD flow.",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "author": {
         "name": "juandarn"
       },

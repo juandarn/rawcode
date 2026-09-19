@@ -29,7 +29,14 @@ axes. Use it when a persona/prompt/config change needs evidence, not an opinion.
 bench/run.sh 40        # 40 HumanEval problems, baseline vs the rawcode prompt
 ```
 
-It downloads HumanEval on first run, generates one greedy completion per problem
+For agentic cost (input tokens re-read every turn, subagents included), run the
+multi-turn benchmark instead. It compares the prompt at a git ref with the working tree:
+
+```bash
+cd bench/agentic && python3 agentic.py 3 HEAD && python3 analyze.py
+```
+
+The HumanEval runner downloads HumanEval on first run, generates one greedy completion per problem
 per arm via `claude -p`, runs each problem's own tests, then prints:
 
 - **Correctness (pass@1)** per arm, the paired difference, a 95% CI, and a

@@ -9,6 +9,7 @@ they can be analysed as separate axes (see analyze.py).
 Usage: python eval.py [N]      # N = number of problems (default 40)
 """
 import json, subprocess, re, sys, os, tempfile, time
+from concurrent.futures import ThreadPoolExecutor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PROMPT = re.sub(r"^---.*?---\n", "", open(os.path.join(HERE, "..", "agents", "rawcode.md")).read(), count=1, flags=re.S)
@@ -20,7 +21,10 @@ N = int(sys.argv[1]) if len(sys.argv) > 1 else 40
 def gen(prompt_body, arm):
     instr = ("Implement the following Python function. Return ONLY the complete "
              "function definition (include any needed imports), no explanation.\n\n" + prompt_body)
-    cmd = ["claude", "-p", instr, "--model", "sonnet", "--output-format", "json"]
+    # Isolated from the user's own settings, plugins, and MCP servers so both arms
+    # see the same bare Claude Code and runs don't pay for SessionStart hooks.
+    cmd = ["claude", "-p", instr, "--model", "sonnet", "--output-format", "json",
+           "--setting-sources", "project", "--strict-mcp-config"]
     if arm == "rawcode":
         cmd += ["--append-system-prompt", PROMPT]
     for _ in range(3):
@@ -52,13 +56,15 @@ def extract(text):
 
 
 problems = [json.loads(l) for l in open(DATA)][:N]
-open(OUT, "w").close()
-for arm in ["baseline", "rawcode"]:
-    for p in problems:
-        text, tok = gen(p["prompt"], arm)
-        ok = passes(extract(text), p["test"], p["entry_point"]) if text else False
-        with open(OUT, "a") as f:
-            f.write(json.dumps({"arm": arm, "task": p["task_id"], "pass": ok, "out": tok}) + "\n")
-        print(f"{arm:9} {p['task_id']:15} {'PASS' if ok else 'fail':5} {tok}t", flush=True)
-        time.sleep(1)
+def run(arm, p):
+    text, tok = gen(p["prompt"], arm)
+    ok = passes(extract(text), p["test"], p["entry_point"]) if text else False
+    print(f"{arm:9} {p['task_id']:15} {'PASS' if ok else 'fail':5} {tok}t", flush=True)
+    return {"arm": arm, "task": p["task_id"], "pass": ok, "out": tok}
+
+
+with ThreadPoolExecutor(int(os.environ.get("BENCH_PARALLEL", "6"))) as ex:
+    rows = list(ex.map(lambda j: run(*j), [(a, p) for a in ["baseline", "rawcode"] for p in problems]))
+with open(OUT, "w") as f:
+    f.writelines(json.dumps(r) + "\n" for r in rows)
 print("DONE ->", OUT)

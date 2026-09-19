@@ -39,16 +39,14 @@ Everything stays native — `/plan`, `/compact`, and all Claude Code features wo
 
 ## How it compares
 
-Measured, not claimed. rawcode's prompt was A/B-tested against the Claude Code baseline on **[HumanEval](https://github.com/openai/human-eval)** — a standard dataset graded by **executable unit tests** (no LLM judge, no bias). Paired design, `claude -p`, single greedy sample per problem, n=40. Correctness and length are reported as **separate axes** (a length-biased judge would conflate them):
+Measured, not claimed. Two paired A/Bs against the bare Claude Code baseline, both graded by executable checks (no LLM judge). Details and reproduction steps are in [`bench/`](bench/).
 
-| Axis | Baseline | rawcode | Paired Δ (95% CI) |
-|------|---------:|--------:|-------------------|
-| **Correctness** — pass@1 | 90.0% | 95.0% | +5.0% [0, +12.5%] · McNemar p=0.50 → **no significant change** |
-| **Output tokens** / problem | 229 | 150 | **−35%** [−138, −34] → **significant** |
+| Benchmark | What it prices | Result (v2.1) |
+|---|---|---|
+| **HumanEval** pass@1, n=40 | correctness + output tokens | 97.5% vs 97.5% (p=1.0); output −9% (not significant) |
+| **Agentic repo tasks**, 5 tasks × 3 reps, Opus | total input incl. cache + subagents | v2.1 is 9% cheaper than v2.0 (14/15 pairs, p=0.001) and not significantly different from no prompt; v2.0 was +14% vs no prompt (p=0.007) |
 
-**Honest reading:** on this code-generation set, rawcode cut output by about a third with **no measurable change in correctness** — terseness was free here. It does *not* claim higher quality (the correctness difference is within noise), and it does *not* test long agentic loops, where Anthropic has reported that over-aggressive between-step conciseness can [hurt quality](https://www.anthropic.com/engineering/april-23-postmortem) — which is exactly why rawcode's brevity rule binds to the final response, never to investigation or verification.
-
-Caveats: HumanEval is partly present in training data (a paired A/B cancels most of this since both arms see the same problems); vanilla tests are weaker than HumanEval+; n=40 single-sample means the correctness CI is wide while the token effect is robust. Reproduce it yourself: [`bench/`](bench/).
+**Honest reading:** in agentic work the bill is input tokens re-read every turn, not output. Every line of persona is paid again on every request. v2.1 keeps only what Claude Code's own prompt lacks (minimalism, root cause, honesty, context budget), so correctness is unchanged and cost is about the same as no prompt. The big savings come from session config (auto-compact window, fewer listed skills, fewer subagents), not from prompt text.
 
 ## Install
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.1.0
+
+### Changed (prompt — measured)
+- **Leaner prompt: 6.8k → 2.4k chars.** Dropped rules that Claude Code's own system prompt already covers (preamble, commits, comments, generic security list, concise-answer examples) and kept what it lacks: minimalism, root cause, honesty, and a context budget. In agentic runs the old prompt cost **+14% input per task** vs no prompt (p=0.007), because every line is re-read on every turn. The new one is 9% cheaper than v2.0 (14/15 pairs, p=0.001), not significantly different from no prompt, and at the same 100% pass rate. HumanEval pass@1 is unchanged (97.5% vs 97.5%).
+- **Context budget replaces "delegate exploration to a subagent".** Subagents reload the full system prompt before doing any work. On a real 45-day log they were 71% of input tokens. Now: do small lookups yourself, delegate only broad sweeps, and ask for file:line conclusions.
+
+### Added (benchmark)
+- **`bench/agentic/`**: a multi-turn token benchmark on a 25-module fixture repo with 5 executable-checked tasks. It measures total input (cache included, subagents included) per arm, supports prompt-at-git-ref arms and an optional edit-gate arm, and ships `analyze.py` for paired deltas.
+- `bench/eval.py` now runs isolated from the runner's personal config and in parallel (`BENCH_PARALLEL`).
+
 ## Unreleased
 
 ### Added (framework — phases 2-4 + adoption)

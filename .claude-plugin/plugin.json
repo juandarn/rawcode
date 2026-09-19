@@ -1,6 +1,6 @@
 {
   "name": "rawcode",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "OpenCode philosophy for Claude Code: concise, root-cause, minimal, secure, verified. No fluff. Install and it just works.",
   "author": {
     "name": "juandarn"
