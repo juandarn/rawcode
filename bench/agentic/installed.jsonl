@@ -1,0 +1,30 @@
+{"arm": "plugin-on", "task": "question", "rep": 0, "pass": true, "input": 56291, "cache_read": 38393, "output": 167, "cost": 0.2023315, "turns": 2, "models": ["claude-opus-5"]}
+{"arm": "plugin-on", "task": "rename", "rep": 0, "pass": true, "input": 114773, "cache_read": 95703, "output": 798, "cost": 0.2584615, "turns": 4, "models": ["claude-opus-5"]}
+{"arm": "plugin-on", "task": "bugfix", "rep": 0, "pass": true, "input": 116159, "cache_read": 96535, "output": 779, "cost": 0.2639425, "turns": 4, "models": ["claude-opus-5"]}
+{"arm": "plugin-on", "task": "tracebug", "rep": 0, "pass": true, "input": 147180, "cache_read": 127058, "output": 1333, "cost": 0.298024, "turns": 5, "models": ["claude-opus-5"]}
+{"arm": "plugin-on", "task": "feature", "rep": 0, "pass": true, "input": 146539, "cache_read": 126176, "output": 1854, "cost": 0.31301799999999996, "turns": 5, "models": ["claude-opus-5"]}
+{"arm": "plugin-on", "task": "bugfix", "rep": 1, "pass": true, "input": 116494, "cache_read": 96755, "output": 736, "cost": 0.2641275, "turns": 4, "models": ["claude-opus-5"]}
+{"arm": "plugin-on", "task": "feature", "rep": 1, "pass": true, "input": 115750, "cache_read": 96062, "output": 1208, "cost": 0.275071, "turns": 4, "models": ["claude-opus-5"]}
+{"arm": "plugin-on", "task": "question", "rep": 1, "pass": true, "input": 85537, "cache_read": 66925, "output": 305, "cost": 0.2271775, "turns": 3, "models": ["claude-opus-5"]}
+{"arm": "plugin-on", "task": "rename", "rep": 1, "pass": true, "input": 144171, "cache_read": 124894, "output": 740, "cost": 0.27366700000000005, "turns": 5, "models": ["claude-opus-5"]}
+{"arm": "plugin-on", "task": "bugfix", "rep": 2, "pass": true, "input": 116537, "cache_read": 96761, "output": 774, "cost": 0.26545050000000003, "turns": 4, "models": ["claude-opus-5"]}
+{"arm": "plugin-on", "task": "question", "rep": 2, "pass": true, "input": 56345, "cache_read": 38395, "output": 208, "cost": 0.2038775, "turns": 2, "models": ["claude-opus-5"]}
+{"arm": "plugin-on", "task": "rename", "rep": 2, "pass": true, "input": 144312, "cache_read": 124995, "output": 967, "cost": 0.2797925, "turns": 5, "models": ["claude-opus-5"]}
+{"arm": "plugin-on", "task": "feature", "rep": 2, "pass": true, "input": 115972, "cache_read": 96325, "output": 1281, "cost": 0.2766175, "turns": 4, "models": ["claude-opus-5"]}
+{"arm": "plugin-on", "task": "tracebug", "rep": 1, "pass": true, "input": 310628, "cache_read": 269314, "output": 4453, "cost": 0.43810065, "turns": 8, "models": ["claude-haiku-4-5-20251001", "claude-opus-5"]}
+{"arm": "plugin-on", "task": "tracebug", "rep": 2, "pass": true, "input": 342392, "cache_read": 310396, "output": 4692, "cost": 0.4505842499999999, "turns": 10, "models": ["claude-haiku-4-5-20251001", "claude-opus-5"]}
+{"arm": "plugin-off", "task": "question", "rep": 0, "pass": true, "input": 59228, "cache_read": 39480, "output": 172, "cost": 0.2215, "turns": 2, "models": ["claude-opus-5"]}
+{"arm": "plugin-off", "task": "feature", "rep": 0, "pass": true, "input": 121238, "cache_read": 100034, "output": 1220, "cost": 0.292517, "turns": 4, "models": ["claude-opus-5"]}
+{"arm": "plugin-off", "task": "rename", "rep": 0, "pass": true, "input": 150156, "cache_read": 129501, "output": 790, "cost": 0.29100050000000005, "turns": 5, "models": ["claude-opus-5"]}
+{"arm": "plugin-off", "task": "bugfix", "rep": 0, "pass": true, "input": 153375, "cache_read": 131516, "output": 1053, "cost": 0.310623, "turns": 5, "models": ["claude-opus-5"]}
+{"arm": "plugin-off", "task": "tracebug", "rep": 0, "pass": true, "input": 155174, "cache_read": 132781, "output": 1540, "cost": 0.32877049999999997, "turns": 5, "models": ["claude-opus-5"]}
+{"arm": "plugin-off", "task": "bugfix", "rep": 1, "pass": true, "input": 153271, "cache_read": 131478, "output": 1110, "cost": 0.311369, "turns": 5, "models": ["claude-opus-5"]}
+{"arm": "plugin-off", "task": "question", "rep": 1, "pass": true, "input": 88872, "cache_read": 69056, "output": 307, "cost": 0.240333, "turns": 3, "models": ["claude-opus-5"]}
+{"arm": "plugin-off", "task": "rename", "rep": 1, "pass": true, "input": 120354, "cache_read": 99608, "output": 877, "cost": 0.279149, "turns": 4, "models": ["claude-opus-5"]}
+{"arm": "plugin-off", "task": "feature", "rep": 1, "pass": true, "input": 152855, "cache_read": 131448, "output": 1487, "cost": 0.316919, "turns": 5, "models": ["claude-opus-5"]}
+{"arm": "plugin-off", "task": "feature", "rep": 2, "pass": true, "input": 121770, "cache_read": 99994, "output": 1395, "cost": 0.30259199999999997, "turns": 4, "models": ["claude-opus-5"]}
+{"arm": "plugin-off", "task": "rename", "rep": 2, "pass": true, "input": 151840, "cache_read": 130527, "output": 986, "cost": 0.30299349999999997, "turns": 5, "models": ["claude-opus-5"]}
+{"arm": "plugin-off", "task": "question", "rep": 2, "pass": true, "input": 59018, "cache_read": 39479, "output": 216, "cost": 0.22050949999999997, "turns": 2, "models": ["claude-opus-5"]}
+{"arm": "plugin-off", "task": "bugfix", "rep": 2, "pass": true, "input": 319560, "cache_read": 287081, "output": 2712, "cost": 0.3996185500000001, "turns": 8, "models": ["claude-haiku-4-5-20251001", "claude-opus-5"]}
+{"arm": "plugin-off", "task": "tracebug", "rep": 1, "pass": true, "input": 308018, "cache_read": 274466, "output": 4299, "cost": 0.43466705000000005, "turns": 8, "models": ["claude-haiku-4-5-20251001", "claude-opus-5"]}
+{"arm": "plugin-off", "task": "tracebug", "rep": 2, "pass": true, "input": 307574, "cache_read": 274198, "output": 4005, "cost": 0.4288785499999999, "turns": 8, "models": ["claude-haiku-4-5-20251001", "claude-opus-5"]}
