@@ -58,4 +58,15 @@ Round 1 (`round1.jsonl`, 48 runs, 4 tasks) had already shown v2.0 at +15.9% mean
 
 **Reading:** v2.0 repeated much of what Claude Code's own system prompt already says, and paid for it again on every turn. v2.1 keeps only what the base prompt lacks (minimalism, root cause, honesty, context budget), which costs about the same as no prompt. The real savings are in session configuration (auto-compact window, skill listing, subagent use), not in the persona text.
 
+### Installed plugin vs no plugin, real user config (`installed.jsonl`)
+
+`BENCH_ISOLATE=0` runs against the installed setup: plugins, hooks, and the harness edit gate. rawcode 2.1 was installed as a plugin (agent + output style), then disabled with `claude plugin disable`. 5 tasks × 3 reps on Opus.
+
+| Arm | Pass | Mean input | Mean cost |
+|---|---:|---:|---:|
+| plugin on (2.1) | 15/15 | 141.9k | $0.286 |
+| plugin off | 15/15 | 161.5k | $0.312 |
+
+Paired: on was cheaper in 11/15, with a median of −5% (95% CI −24.0%..+0.8%) and a sign test of p=0.12. The direction is favorable but not significant, and there is no quality regression. A probe confirmed the rawcode prompt appears exactly once through the plugin (agent + output style do not duplicate it) and that a bare "ok" request costs ~1.2k fewer tokens with the plugin on.
+
 **Caveats:** these are short tasks (2-10 turns) with n=15 pairs. They measure per-turn overhead and basic behavior, not long sessions where context growth dominates.

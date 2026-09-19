@@ -24,6 +24,8 @@ REPS = int(sys.argv[1]) if len(sys.argv) > 1 else 2
 BASE_REF = sys.argv[2] if len(sys.argv) > 2 else "HEAD"
 MODEL = os.environ.get("BENCH_MODEL", "sonnet")
 GATE = os.environ.get("HARNESS_GATE")
+# BENCH_ISOLATE=0 runs against the installed user config (plugins, hooks) instead of bare Claude Code.
+ISOLATE = os.environ.get("BENCH_ISOLATE", "1") == "1"
 TESTS = "python3 -m unittest discover -s tests -t . -q"
 
 TASKS = {
@@ -72,9 +74,10 @@ def run(arm, task, rep):
         for cmd in (["git", "init", "-q"], ["git", "add", "-A"],
                     ["git", "-c", "user.email=b@b", "-c", "user.name=b", "commit", "-qm", "init"]):
             subprocess.run(cmd, cwd=work, check=True)
-        cmd = ["claude", "-p", prompt, "--model", MODEL, "--output-format", "json",
-               "--setting-sources", "project", "--strict-mcp-config",
+        cmd = ["claude", "-p", prompt, "--model", MODEL, "--output-format", "json", "--strict-mcp-config",
                "--permission-mode", "bypassPermissions", "--max-turns", "40"]
+        if ISOLATE:
+            cmd += ["--setting-sources", "project"]
         if system:
             cmd += ["--append-system-prompt", system]
         if settings:
