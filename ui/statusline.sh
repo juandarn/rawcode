@@ -1,22 +1,21 @@
 #!/bin/bash
-# rawcode status line for Claude Code (up to three lines, calm by default).
+# rawcode status line for Claude Code: stacked, column-aligned rows in three groups.
 # Reads the statusLine JSON from stdin. Field names per the Claude Code docs:
 # https://code.claude.com/docs/en/statusline
-#   line 1  identity  : ◆ rawcode   model · effort   repo   ⎇ branch   [session name]
-#   line 2  meters    : 5h / 7d plan usage (Pro/Max only) and ctx, as 10-cell bars,
-#                       with reset countdown + local clock and used/total tokens
-#   line 3  activity  : prompt-cache state │ lines changed │ session time │ API share
-# Rows are separated by a spacer line holding one NBSP (a plain empty line would be trimmed).
-# A segment is omitted when its data is absent; nothing is printed as a placeholder.
+#   group 1  identity : ◆ rawcode   model · effort   repo   ⎇ branch   [session name]
+#   group 2  meters   : 5h / 7d plan usage (Pro/Max only) and ctx: label, 10-cell bar, pct, detail
+#   group 3  activity : cache / lines / time rows; their detail lines up with the meters' detail
+# Groups are separated by a spacer line holding one NBSP (a plain empty line would be trimmed).
+# A row or segment is omitted when its data is absent; nothing is printed as a placeholder.
 # Bars and percentages turn yellow at 60% and red at 80%.
 # Palette (256-colour only): violet 141 accent, green 78 ok, yellow 221 warn, red 203 crit,
-# label 245, value 252, bright 255, track 238, separator 240.
+# label 245, value 252, bright 255, track 238, cyan 81 (high effort).
 
 INPUT=$(cat)
 
 VIOLET=$'\033[38;5;141m'; OK=$'\033[38;5;78m';  WARN=$'\033[38;5;221m'; CRIT=$'\033[38;5;203m'
 LABEL=$'\033[38;5;245m';  VALUE=$'\033[38;5;252m'; BRIGHT=$'\033[38;5;255m'
-TRACK=$'\033[38;5;238m';  SEPC=$'\033[38;5;240m'; CYAN=$'\033[38;5;81m'
+TRACK=$'\033[38;5;238m';  CYAN=$'\033[38;5;81m'
 BOLD=$'\033[1m'; R=$'\033[0m'
 
 LOGO="${VIOLET}${BOLD}◆ rawcode${R}"
@@ -68,6 +67,12 @@ for v in "${FIELDS[@]}"; do
 done
 
 NOW=$(date +%s)
+
+# Column layout, computed once. Every row is: label | value | detail. The activity rows'
+# detail column lines up with the meters' (label, 10-cell bar, gap, right-aligned pct, gap).
+LABW=7; BARGAP=3; PCTW=4; GAPW=4
+DETAIL_COL=$(( LABW + 10 + BARGAP + PCTW + GAPW ))
+VALW=$(( DETAIL_COL - LABW ))
 
 # ---- helpers -------------------------------------------------------------------------
 isnum() { [[ "$1" =~ ^[0-9]+$ ]]; }
@@ -126,23 +131,41 @@ human() {
   else HUM="$1"; fi
 }
 
-# meter <label> <pct> [resets_at] [clock-format]
-#   -> "5h  ━━━━━━────  62%   ↻ 2h10m · 21:40" (empty when pct is absent). Labels share one width.
+# gap <n>  -> n spaces in SP
+gap() { printf -v SP '%*s' "$1" ''; }
+
+# reset_detail <epoch> <clock-format>  -> DET: dim "↻ 2d9h · Wed 04:32" (empty if unknown or past)
+reset_detail() {
+  countdown "$1"
+  DET=""
+  [ -n "$CD" ] || return 0
+  DET="↻ ${CD}"
+  clock "$1" "$2"
+  [ -n "$CLK" ] && DET="${DET} · ${CLK}"
+  DET="${LABEL}${DET}${R}"
+}
+
+# meter <label> <pct> [detail]  -> "5h     ━━━━━━────    62%    <detail>" (empty when pct is absent)
+# Padding is applied to plain text; colour codes are wrapped around it afterwards.
 meter() {
-  local lab out
+  local lab pct out
   isnum "$2" || return 0
-  printf -v lab '%-3s' "$1"
-  pcol "$2"; bar "$2"; countdown "$3"
-  printf -v out '%s%s%s  %s  %s%3d%%%s' "$LABEL" "$lab" "$R" "$BAR" "$PC" "$2" "$R"
-  if [ -n "$CD" ]; then
-    out="${out}   ${LABEL}↻ ${CD}"
-    if [ -n "$4" ]; then
-      clock "$3" "$4"
-      [ -n "$CLK" ] && out="${out} · ${CLK}"
-    fi
-    out="${out}${R}"
-  fi
+  printf -v lab '%-*s' "$LABW" "$1"
+  printf -v pct '%*s' "$PCTW" "$2%"
+  pcol "$2"; bar "$2"
+  gap "$BARGAP"; out="${LABEL}${lab}${R}${BAR}${SP}${PC}${pct}${R}"
+  gap "$GAPW";   [ -n "$3" ] && out="${out}${SP}${3}"
   printf '%s' "$out"
+}
+
+# arow <label> <plain-value> <coloured-value> [detail]  -> ROW
+#   "cache  95%           ↻ 4m": the value is padded (as plain text) so the detail starts at DETAIL_COL
+arow() {
+  local lab pad=1
+  printf -v lab '%-*s' "$LABW" "$1"
+  [ $(( VALW - ${#2} )) -gt 1 ] && pad=$(( VALW - ${#2} ))
+  ROW="${LABEL}${lab}${R}${3}"
+  if [ -n "$4" ]; then gap "$pad"; ROW="${ROW}${SP}${4}"; fi
 }
 
 # join <separator> <segment>...  -> non-empty segments joined by the separator, in JOINED
@@ -156,9 +179,13 @@ join() {
   done
 }
 
-BAR_SEP="   ${SEPC}│${R}   "
+# add <var> <row>  -> appends a non-empty row (newline-separated) to the group held in <var>
+add() {
+  [ -z "$2" ] && return 0
+  if [ -n "${!1}" ]; then printf -v "$1" '%s\n%s' "${!1}" "$2"; else printf -v "$1" '%s' "$2"; fi
+}
 
-# ---- line 1: identity ----------------------------------------------------------------
+# ---- group 1: identity ---------------------------------------------------------------
 case "$EFFORT" in
   low)        EC="$LABEL" ;;
   medium)     EC="$VALUE" ;;
@@ -168,7 +195,7 @@ case "$EFFORT" in
 esac
 
 MODEL_SEG=""
-[ -n "$MODEL" ]  && MODEL_SEG="${BRIGHT}${BOLD}${MODEL}${R}"
+[ -n "$MODEL" ] && MODEL_SEG="${BRIGHT}${BOLD}${MODEL}${R}"
 if [ -n "$EFFORT" ]; then
   [ -n "$MODEL_SEG" ] && MODEL_SEG="${MODEL_SEG} ${LABEL}·${R} "
   MODEL_SEG="${MODEL_SEG}${EC}${EFFORT}${R}"
@@ -189,52 +216,57 @@ BRANCH_SEG=""; [ -n "$BRANCH" ] && BRANCH_SEG="${OK}⎇ ${BRANCH}${R}"
 SESS_SEG="";   [ -n "$SESS" ]   && SESS_SEG="${LABEL}${SESS}${R}"
 
 join "   " "$LOGO" "$MODEL_SEG" "$REPO_SEG" "$BRANCH_SEG" "$SESS_SEG"
-L1="$JOINED"
+G1="$JOINED"
 
-# ---- line 2: plan + context meters ---------------------------------------------------
-CTX_SEG=""
+# ---- group 2: plan + context meters --------------------------------------------------
+G2=""
+reset_detail "$H5R" "%H:%M";    add G2 "$(meter 5h "$H5" "$DET")"
+reset_detail "$D7R" "%a %H:%M"; add G2 "$(meter 7d "$D7" "$DET")"
+
 if ! isnum "$CTXP" && isnum "$CTXTOK" && isnum "$CTXSIZE" && [ "$CTXSIZE" -gt 0 ]; then
   CTXP=$(( CTXTOK * 100 / CTXSIZE ))
 fi
-if isnum "$CTXP"; then
-  CTX_SEG=$(meter ctx "$CTXP")
-  if isnum "$CTXTOK" && isnum "$CTXSIZE"; then
-    human "$CTXTOK"; USED="$HUM"; human "$CTXSIZE"
-    CTX_SEG="${CTX_SEG}   ${LABEL}${USED}/${HUM}${R}"
-  fi
-  [ "$EX200" = "true" ] && CTX_SEG="${CTX_SEG} ${WARN}⚠ >200k${R}"
+DET=""
+if isnum "$CTXTOK" && isnum "$CTXSIZE"; then
+  human "$CTXTOK"; USED="$HUM"; human "$CTXSIZE"
+  DET="${LABEL}${USED}/${HUM}${R}"
 fi
-join "$BAR_SEP" "$(meter 5h "$H5" "$H5R" %H:%M)" "$(meter 7d "$D7" "$D7R" "%a %H:%M")" "$CTX_SEG"
-L2="$JOINED"
+if [ "$EX200" = "true" ]; then
+  [ -n "$DET" ] && DET="${DET}  "
+  DET="${DET}${WARN}⚠ >200k${R}"
+fi
+add G2 "$(meter ctx "$CTXP" "$DET")"
 
-# ---- line 3: activity ----------------------------------------------------------------
-CACHE_SEG=""
+# ---- group 3: activity ---------------------------------------------------------------
+G3=""
 if [ -n "$HAVEPC" ] && [ "$OBS" != "false" ]; then
   countdown "$EXPIRES"
   # Warm only while the TTL has not lapsed; a past expires_at means the cache went cold.
   if [ "$CWARM" = "true" ] && { ! isnum "$EXPIRES" || [ -n "$CD" ]; }; then
-    if isnum "$HIT"; then CACHE_SEG="${OK}cache ${HIT}%${R}"; else CACHE_SEG="${OK}cache warm${R}"; fi
-    [ -n "$CD" ] && CACHE_SEG="${CACHE_SEG}  ${LABEL}↻ ${CD}${R}"
+    if isnum "$HIT"; then PLAIN="${HIT}%"; else PLAIN="warm"; fi
+    DET=""; [ -n "$CD" ] && DET="${LABEL}↻ ${CD}${R}"
+    arow cache "$PLAIN" "${OK}${PLAIN}${R}" "$DET"
   else
-    CACHE_SEG="${CRIT}cache cold${R}"
+    arow cache cold "${CRIT}cold${R}"
   fi
+  add G3 "$ROW"
 fi
 
-LINES_SEG=""
 if { isnum "$LADD" && [ "$LADD" -gt 0 ]; } || { isnum "$LREM" && [ "$LREM" -gt 0 ]; }; then
-  LINES_SEG="${OK}+${LADD:-0}${R} ${CRIT}−${LREM:-0}${R}"
+  arow lines "" "${OK}+${LADD:-0}${R} ${CRIT}−${LREM:-0}${R}"
+  add G3 "$ROW"
 fi
 
 elapsed "$DUR"
-TIME_SEG=""; [ -n "$EL" ] && TIME_SEG="${LABEL}${EL}${R}"
-API_SEG="";  isnum "$API" && API_SEG="${LABEL}api ${API}%${R}"
+if [ -n "$EL" ]; then
+  DET=""; isnum "$API" && DET="${LABEL}api ${API}%${R}"
+  arow time "$EL" "${LABEL}${EL}${R}" "$DET"
+  add G3 "$ROW"
+fi
 
-join "$BAR_SEP" "$CACHE_SEG" "$LINES_SEG" "$TIME_SEG" "$API_SEG"
-L3="$JOINED"
-
-# Rows are separated by a single-NBSP line: Claude Code trims truly empty lines.
+# ---- output: groups separated by a single-NBSP line (Claude Code trims truly empty ones) ----
 NBSP=$'\xc2\xa0'
-printf '%s\n' "$L1"
-[ -n "$L2" ] && printf '%s\n%s\n' "$NBSP" "$L2"
-[ -n "$L3" ] && printf '%s\n%s\n' "$NBSP" "$L3"
+printf '%s\n' "$G1"
+[ -n "$G2" ] && printf '%s\n%s\n' "$NBSP" "$G2"
+[ -n "$G3" ] && printf '%s\n%s\n' "$NBSP" "$G3"
 exit 0

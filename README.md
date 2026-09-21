@@ -117,22 +117,26 @@ The installer activates the **output style** (`outputStyle: "rawcode"` in your s
 
 ## Statusline
 
-rawcode adds a calm status bar of up to three rows, spaced apart by a one-character spacer line (a non-breaking space, so Claude Code does not trim it). A segment appears only when Claude Code sends its data.
+rawcode adds a calm status bar: one metric per row, in three groups. Groups are separated by a one-character spacer line (a non-breaking space, so Claude Code does not trim it). Rows share fixed columns, so labels, bars, percentages and details line up. A row or segment appears only when Claude Code sends its data.
 
 ```
-◆ rawcode   Sonnet 5 · high   juandarn/rawcode   ⎇ main
+◆ rawcode   Sonnet 5 · high   juandarn/rawcode   ⎇ main   my session
  
-5h   ━━━━━━────   62%   ↻ 2h48m · 21:40   │   7d   ━━━───────   31%   ↻ 2d9h · Wed 14:00   │   ctx  ━━━━━━━───   66%   132k/200k
+5h     ━━━━━━────    62%    ↻ 2h48m · 21:40
+7d     ━━━───────    31%    ↻ 2d9h · Wed 14:00
+ctx    ━━━━━━━───    66%    132k/200k  ⚠ >200k
  
-cache 95%  ↻ 4m   │   +120 −30   │   1h 0m   │   api 25%
+cache  95%                  ↻ 4m
+lines  +120 −30
+time   1h 0m                api 25%
 ```
 
-- **Row 1, identity**: model and effort level (low grey, medium white, high cyan, xhigh/max violet), repo (`owner/name`, or the directory name), git branch, and the session name when one is set
-- **Row 2, meters**: `5h` / `7d` claude.ai plan limits with the reset countdown and the local clock time of the reset (`21:40` for 5h, `Wed 14:00` for 7d), and `ctx` with used/total tokens, plus a yellow `⚠ >200k` once the context passes 200k tokens. The plan meters appear only for Pro/Max subscribers, after the first API response; a missing window is skipped
-- **Row 3, activity**: prompt cache (green hit ratio with the time left before it expires while warm, red `cache cold` once it has expired, hidden when the provider reports no caching), lines added/removed, session time, and `api N%`, the share of the session spent waiting on the API. The row is dropped when everything is empty. Session cost in dollars is intentionally not shown
+- **Identity**: model and effort level (low grey, medium white, high cyan, xhigh/max violet), repo (`owner/name`, or the directory name), git branch, and the session name when one is set
+- **Meters**: `5h` / `7d` claude.ai plan limits with the reset countdown and the local clock time of the reset (`21:40` for 5h, `Wed 14:00` for 7d), and `ctx` with used/total tokens, plus a yellow `⚠ >200k` once the context passes 200k tokens. The plan rows appear only for Pro/Max subscribers, after the first API response; a missing window simply disappears
+- **Activity**: `cache` (green hit ratio with the time left before it expires while warm, red `cold` once it has expired, hidden when the provider reports no caching), `lines` added/removed, and `time` in session with `api N%`, the share of it spent waiting on the API. The group is dropped when all rows are empty. Session cost in dollars is intentionally not shown
 - **Threshold colors**: every bar and percentage is green below 60%, yellow at 60-79%, red at 80% and above; the unused part of a bar is a dim track
-- **Palette** (256-colour only): violet 141 accent (never red, so it never reads as an alert), green 78, yellow 221, red 203, and greys 245 label, 252 value, 255 model, 238 track, 240 separator
-- The cache segment needs Claude Code v2.1.251+
+- **Palette** (256-colour only): violet 141 accent (never red, so it never reads as an alert), green 78, yellow 221, red 203, and greys 245 label, 252 value, 255 model, 238 track
+- The cache rows need Claude Code v2.1.251+
 
 ## Uninstall
 
