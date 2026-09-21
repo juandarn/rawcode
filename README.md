@@ -117,19 +117,29 @@ The installer activates the **output style** (`outputStyle: "rawcode"` in your s
 
 ## Statusline
 
-rawcode adds a calm status bar in three groups: identity, meters and activity. The groups are separated by a spacer line holding a single U+2800 (braille blank), because Claude Code trims empty and non-breaking-space lines. A row or segment appears only when Claude Code sends its data. The layout follows the terminal width, read once with `stty size` (falling back to `$COLUMNS`):
+rawcode adds a calm status bar in three groups: identity, meters and activity. The groups are separated by a spacer line holding a single U+2800 (braille blank), because Claude Code trims empty and non-breaking-space lines. A row or segment appears only when Claude Code sends its data (with no plan limits, for example, `ctx` sits at the left margin). Every line has a 2-column margin.
 
-- **Wide** (100 columns or more, or an unknown width): the meters share one row and the activity row sits under it, with `cache hit` under `5h`, `changed` under `7d` and `session` under `ctx`. Each group has a fixed column, so when one is missing the others stay where they are. The bars are 12 cells and shrink to 10 or 8, and then the reset clock times are dropped, until the row fits (118 columns when the width is unknown, otherwise the width minus 2). The session name is right-aligned on the identity row. If nothing fits (roughly under 106 columns), the compact layout is used.
-- **Compact** (under 100 columns): one metric per row, all rows sharing the same columns, with 10-cell bars.
+The layout follows the terminal width. Claude Code runs the script without a controlling terminal, so the width is looked up in this order: `$RAWCODE_COLS` (a test override), `stty size` on `/dev/tty`, the tty of the nearest ancestor process (the parent chain is walked with `ps`, then `stty -f` / `-F` on that device), `$COLUMNS`, and finally "unknown", which is treated as wide. Every lookup fails silently.
 
-Every line has a 2-column margin.
+- **Wide**: the meters share one row (`5h │ 7d │ ctx`) and the activity row sits under it. Each row lists only the slots it has, packed from the left: a missing meter frees its column instead of leaving a blank one, and the dim `│` appears only between two slots. Slot N starts in the same column in both rows and their `│` line up. The rows are built for each step of a ladder and the first one whose widest line fits wins (the width minus 2, or 118 when the width is unknown): 12-cell bars with the reset clock times, 12-cell bars without them, then 10-cell bars without them. Fewer slots means more room. The session name is right-aligned on the identity row.
+- **Compact**: when no wide step fits (roughly under 114 columns), one metric per row, all rows sharing the same columns, with 10-cell bars.
 
 ```
-  ◆ rawcode   Sonnet 5 · high · 200k   juandarn/rawcode   ⎇ main                         my session
+  ◆ rawcode   Sonnet 5 · high · 200k   juandarn/rawcode   ⎇ main                                                                       my session
 ⠀
-  5h  ███████░░░░░  62%  ↻ 2h48m      7d  ████░░░░░░░░  31%  ↻ 2d9h        ctx  ████████░░░░  66%  132k/200k ⚠ >200k
+  5h   ███████▌       62%   ↻ 2h48m · 22:37   │   7d   ███▊           31%   ↻ 2d9h · Wed 05:19    │   ctx  ███████▉       66%   132k/200k ⚠ >200k
 ⠀
-  cache hit  95%  expires 4m          changed  +120 −30                    session  1h 0m · 25% in API calls
+  cache hit  95%  expires 4m                  │   changed  +120 −30                               │   session  1h 0m · 25% in API calls
+```
+
+At 118 columns (clock times dropped, 10-cell bars):
+
+```
+  ◆ rawcode   Sonnet 5 · high · 200k   juandarn/rawcode   ⎇ main                                      my session
+⠀
+  5h   ██████▎      62%   ↻ 2h48m   │   7d   ███▏         31%   ↻ 2d9h     │   ctx  ██████▋      66%   ⚠ >200k
+⠀
+  cache hit  95%  expires 4m        │   changed  +120 −30                  │   session  1h 0m · 25% in API calls
 ```
 
 Compact:
@@ -137,9 +147,9 @@ Compact:
 ```
   ◆ rawcode   Sonnet 5 · high · 200k   juandarn/rawcode   ⎇ main   my session
 ⠀
-  5h         ██████░░░░    62%    ↻ 2h48m · 21:40
-  7d         ███░░░░░░░    31%    ↻ 2d9h · Wed 14:00
-  ctx        ███████░░░    66%    132k/200k ⚠ >200k
+  5h         ██████▎       62%    ↻ 2h48m · 22:37
+  7d         ███▏          31%    ↻ 2d9h · Wed 05:19
+  ctx        ██████▋       66%    132k/200k ⚠ >200k
 ⠀
   cache hit  95%                  expires 4m
   changed    +120 −30
@@ -147,10 +157,10 @@ Compact:
 ```
 
 - **Identity**: model, effort level (low grey, medium white, high cyan, xhigh/max violet) and context window size, then the repo (`owner/name`, or the directory name), git branch, and the session name when one is set
-- **Meters**: `5h` / `7d` claude.ai plan limits with the reset countdown (plus the local clock time of the reset, such as `21:40` or `Wed 14:00`, when there is room), and `ctx` with used/total tokens and a yellow `⚠ >200k` once the context passes 200k tokens. The plan meters appear only for Pro/Max subscribers, after the first API response; a missing window simply disappears
+- **Meters**: `5h` / `7d` claude.ai plan limits with the reset countdown (plus the local clock time of the reset, such as `21:40` or `Wed 14:00`, when the row has room), and `ctx` with used/total tokens and a yellow `⚠ >200k` once the context passes 200k tokens. The plan meters appear only for Pro/Max subscribers, after the first API response; a missing window simply disappears
 - **Activity**: `cache hit` (green hit ratio with the time left before the cache expires; a red `cache cold` once it has expired; hidden when the provider reports no caching), `changed` lines added/removed, and `session` time with the share of it spent waiting on the API. Session cost in dollars is intentionally not shown
-- **Bars and colors**: `█` for the load and a dim `░` track for the rest; bars and percentages are green below 60%, yellow at 60-79% and red at 80% and above
-- **Palette** (256-colour only): violet 141 accent (never red, so it never reads as an alert), green 78, yellow 221, red 203, and greys 245 label, 252 value, 255 model, 238 track
+- **Bars and colors**: a smooth bar on a dark track (every cell has background 256-colour 237): full `█` cells plus one eighth-block boundary cell (`▏` to `▉`), so the load is resolved to 1/8 of a cell, and any non-zero load shows at least `▏`. Bars and percentages are green below 60%, yellow at 60-79% and red at 80% and above
+- **Palette** (256-colour only): violet 141 accent (never red, so it never reads as an alert), green 78, yellow 221, red 203, and greys 245 label, 252 value, 255 model, 237 track background, 240 separator
 - The cache rows need Claude Code v2.1.251+
 
 ## Uninstall

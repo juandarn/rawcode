@@ -8,26 +8,28 @@
 # The three groups are separated by one spacer line holding a single U+2800 (braille blank):
 # Claude Code trims empty and NBSP-only lines but keeps this one, and it renders as a blank cell.
 #
-# Two layouts, picked from the terminal width (stty size on /dev/tty, else $COLUMNS):
-#   wide     width >= 100 or unknown: the meters share ONE row (5h | 7d | ctx) and the activity
-#            row sits under it with cache hit under 5h, changed under 7d, session under ctx.
-#            Slots have fixed widths and start at fixed columns, so a missing slot leaves its
-#            column empty and the others do not move. The bars are 12 cells and shrink to 10 or
-#            8, then the reset clock times are dropped, until the row fits (at most 118
-#            columns when the width is unknown, else width - 2). The session name is
-#            right-aligned on the identity row. If nothing fits, the compact layout is used.
-#   compact  0 < width < 100: one metric per row, all rows sharing the same columns, 10-cell bars
+# Two layouts, picked from the terminal width (see term_cols) and from how wide the rows really are:
+#   wide     the meters share ONE row (5h │ 7d │ ctx) and the activity row sits under it (cache
+#            hit, changed, session). Each row lists only the slots it has, packed left to right;
+#            slot i starts in the same column in both rows and the dim │ separators line up. A │
+#            appears only between two slots, never leading or trailing. Bars are 12 cells. The rows
+#            are built for each step of a ladder and the first one whose widest line fits (width - 2,
+#            or 118 when the width is unknown) wins: 12-cell bars with reset clock times, 12
+#            without clocks, 10 without clocks, and (only when the context is over 200k) 10 with
+#            the ⚠ but no token count. The session name is right-aligned on the identity row.
+#   compact  nothing above fits: one metric per row, all rows sharing the same columns, 10-cell bars
 # Every line starts with a 2-column margin (spacers excepted). A row or segment is omitted when
-# its data is absent; nothing is printed as a placeholder. Bars and percentages turn yellow at
-# 60% and red at 80%; bars use █ for the load and ░ for the rest.
+# its data is absent; nothing is printed as a placeholder. Bars are smooth: every cell sits on a
+# dark track background, filled with █ plus an eighth-block boundary cell (▏ to ▉); bars and
+# percentages turn yellow at 60% and red at 80%.
 # Palette (256-colour only): violet 141 accent, green 78 ok, yellow 221 warn, red 203 crit,
-# label 245, value 252, bright 255, track 238, cyan 81 (high effort).
+# label 245, value 252, bright 255, track background 237, separator 240, cyan 81 (high effort).
 
 INPUT=$(cat)
 
 VIOLET=$'\033[38;5;141m'; OK=$'\033[38;5;78m';  WARN=$'\033[38;5;221m'; CRIT=$'\033[38;5;203m'
 LABEL=$'\033[38;5;245m';  VALUE=$'\033[38;5;252m'; BRIGHT=$'\033[38;5;255m'
-TRACK=$'\033[38;5;238m';  CYAN=$'\033[38;5;81m'
+TRKBG=$'\033[48;5;237m';  SEPC=$'\033[38;5;240m'; CYAN=$'\033[38;5;81m'
 BOLD=$'\033[1m'; R=$'\033[0m'
 
 MARGIN="  "
@@ -92,48 +94,37 @@ vlen() {
   VL=${#s}
 }
 
-# ---- width and mode ------------------------------------------------------------------
-# The terminal width is read once. Without a controlling tty (a pipe, a sandbox) the
-# lookup fails silently and falls back to $COLUMNS, then to "unknown", which means wide.
-W="$RAWCODE_COLS"
-if ! isnum "$W"; then
-  W=""
-  SZ=$(stty size 2>/dev/null </dev/tty) && W=${SZ##* }
-  isnum "$W" || W="$COLUMNS"
-  isnum "$W" || W=0
-fi
-if [ "$W" -gt 0 ] && [ "$W" -lt 100 ]; then WIDE=0; else WIDE=1; fi
-
-# Column layout, computed once from constants (never from the data, so columns stay put).
-SPACER=$'\xe2\xa0\x80'
-SLOTGAP=6                                # minimum space between two slots in wide mode
-if [ "$WIDE" = 1 ]; then
-  LIM=118; [ "$W" -gt 0 ] && LIM=$(( W - 2 ))
-  FIT=0
-  # Slot = label(2-3) + 2 + bar + 1 + pct(4) + 2 + detail, detail at its widest ("↻ 4h59m · 23:59",
-  # "↻ 6d23h · Wed 23:59"; without clocks "↻ 4h59m", "↻ 6d23h"). The last slot is budgeted at 34.
-  for CFG in "12 1" "10 1" "8 1" "12 0" "10 0" "8 0"; do
-    BARN=${CFG% *}; SHOWCLK=${CFG#* }
-    if [ "$SHOWCLK" = 1 ]; then S1=$(( 11 + BARN + 15 )); S2=$(( 11 + BARN + 19 ))
-    else                        S1=$(( 11 + BARN + 7 ));  S2=$(( 11 + BARN + 8 )); fi
-    [ "$S1" -lt 29 ] && S1=29                                   # "cache hit  95%  expires 1h0m"
-    [ "$S2" -lt 23 ] && S2=23
-    NEED=$(( ${#MARGIN} + S1 + S2 + 2 * SLOTGAP + 34 ))
-    if [ "$NEED" -le "$LIM" ]; then FIT=1; break; fi
+# ---- width ---------------------------------------------------------------------------
+# term_cols -> W: terminal columns, 0 when unknown. Claude Code runs this script without a
+# controlling tty, so `stty size </dev/tty` fails there; the fallback walks up the parent
+# processes until one owns a real tty and asks that device. Order: $RAWCODE_COLS (test override),
+# /dev/tty, the ancestor's tty, $COLUMNS, unknown. Failures are silent.
+term_cols() {
+  local sz cols="" pid=$PPID ppid tty n=0 re='^(tty|pts/)[A-Za-z0-9/]+$'
+  W=0
+  if isnum "$RAWCODE_COLS"; then W=$RAWCODE_COLS; return 0; fi
+  sz=$(stty size 2>/dev/null </dev/tty) && cols=${sz##* }
+  if isnum "$cols" && [ "$cols" -gt 0 ]; then W=$cols; return 0; fi
+  while [ "$n" -lt 8 ] && isnum "$pid" && [ "$pid" -gt 1 ]; do
+    read -r ppid tty <<<"$(ps -o ppid=,tty= -p "$pid" 2>/dev/null)"
+    if [[ "$tty" =~ $re ]]; then
+      sz=$(stty -f "/dev/$tty" size 2>/dev/null) || sz=$(stty -F "/dev/$tty" size 2>/dev/null) || sz=""
+      cols=${sz##* }
+      if isnum "$cols" && [ "$cols" -gt 0 ]; then W=$cols; return 0; fi
+      break
+    fi
+    pid=$ppid; n=$(( n + 1 ))
   done
-  if [ "$FIT" = 1 ]; then
-    COL2=$(( S1 + SLOTGAP )); COL3=$(( COL2 + S2 + SLOTGAP )); TOTAL=$NEED
-    LABW=0; LGAP=2; BARGAP=1; GAPW=2      # meters: label, 2 spaces, bar, pct (4 wide), detail
-    ALABW=0; AVALW=5                      # activity: label, 2 spaces, value (padded), detail
-  else
-    WIDE=0
-  fi
-fi
+  if isnum "$COLUMNS" && [ "$COLUMNS" -gt 0 ]; then W=$COLUMNS; fi
+  return 0
+}
+term_cols
+
+SPACER=$'\xe2\xa0\x80'
+SEP="   ${SEPC}│${R}   "                # between slots in wide mode: 3 spaces, dim │, 3 spaces
+SEPW=7
 PCTW=4
-if [ "$WIDE" = 0 ]; then
-  SHOWCLK=1; BARN=10; LABW=11; LGAP=0; BARGAP=3; GAPW=4
-  ALABW=11; AVALW=$(( LABW + BARN + BARGAP + PCTW + GAPW - ALABW ))   # detail lines up with the meters'
-fi
+LIM=118; [ "$W" -gt 0 ] && LIM=$(( W - 2 ))      # widest line allowed, margin included
 
 # pcol <pct>  -> sets PC: green (<60), yellow (60-79), red (>=80)
 pcol() {
@@ -142,15 +133,21 @@ pcol() {
   else PC="$OK"; fi
 }
 
-# bar <pct>  -> BARN-cell bar in BAR: coloured █ for the load, dim ░ for the rest.
-# Any non-zero load shows at least one filled cell.
+# bar <pct>  -> BARN-cell bar in BAR. Every cell has the track background; the load is full
+# blocks plus one eighth-block boundary cell, rounded to eighths of a cell. Any non-zero load
+# shows at least one eighth; the colours are reset right after the last cell.
+EIGHTHS=(▏ ▎ ▍ ▌ ▋ ▊ ▉)
 bar() {
-  local filled=$(( ($1 * BARN + 50) / 100 )) on off
-  [ "$1" -gt 0 ] && [ "$filled" -eq 0 ] && filled=1
-  [ "$filled" -gt "$BARN" ] && filled=$BARN
-  printf -v on '%*s' "$filled" '';                 on=${on// /█}
-  printf -v off '%*s' $(( BARN - filled )) '';     off=${off// /░}
-  BAR="${PC}${on}${R}${TRACK}${off}${R}"
+  local eighths=$(( ($1 * BARN * 8 + 50) / 100 )) full part rest on off
+  [ "$1" -gt 0 ] && [ "$eighths" -eq 0 ] && eighths=1
+  [ "$eighths" -gt $(( BARN * 8 )) ] && eighths=$(( BARN * 8 ))
+  full=$(( eighths / 8 )); part=$(( eighths % 8 ))
+  rest=$(( BARN - full )); [ "$part" -gt 0 ] && rest=$(( rest - 1 ))
+  printf -v on '%*s' "$full" '';  on=${on// /█}
+  printf -v off '%*s' "$rest" ''
+  BAR="${TRKBG}${PC}${on}"
+  [ "$part" -gt 0 ] && BAR="${BAR}${EIGHTHS[part-1]}"
+  BAR="${BAR}${off}${R}"
 }
 
 # countdown <epoch>  -> "2d9h" | "2h10m" | "42m" in CD (empty when unknown or already past)
@@ -207,7 +204,7 @@ reset_detail() {
 }
 
 # meter <label> <pct> <detail> <detail-plain>  -> ROW and its plain length ROWLEN
-#   "5h  ████████░░░░  62%  ↻ 2h48m" (nothing when pct is absent)
+#   "5h   ██████▍     62%   ↻ 2h48m" (nothing when pct is absent)
 # Padding is applied to plain text; colour codes are wrapped around it afterwards.
 meter() {
   local lab pct
@@ -246,19 +243,42 @@ LROWS=(); AROWS=(); MT=("" "" ""); ML=(0 0 0); AT=("" "" ""); AL=(0 0 0)
 addl() { [ -z "$ROW" ] && return 0; LROWS[${#LROWS[@]}]="$ROW"; MT[$1]="$ROW"; ML[$1]="$ROWLEN"; }
 adda() { [ -z "$ROW" ] && return 0; AROWS[${#AROWS[@]}]="$ROW"; AT[$1]="$ROW"; AL[$1]="$ROWLEN"; }
 
-# slotrow <text0> <len0> <text1> <len1> <text2> <len2> -> SROW: the slots that have text, each
-# starting at its own column (0, COL2, COL3), at least SLOTGAP after the previous one.
-slotrow() {
-  local i=0 cur=0 want pad txt len
-  SROW=""
-  while [ "$i" -lt 3 ]; do
-    txt="$1"; len="$2"; shift 2
-    if [ -n "$txt" ]; then
-      case $i in 0) want=0 ;; 1) want=$COL2 ;; *) want=$COL3 ;; esac
-      pad=$(( want - cur ))
-      if [ -n "$SROW" ] && [ "$pad" -lt "$SLOTGAP" ]; then pad=$SLOTGAP; fi
-      gap "$pad"; SROW="${SROW}${SP}${txt}"
-      cur=$(( cur + pad + len ))
+# pack m|a  -> PT[] PL[] PW[] PN: the slots present in the meters (m) or activity (a) row, packed
+# left to right. PW is the width a slot takes when another slot follows it: the widest it can be
+# (label 3 + 2 + bar + 2 + pct 4 + 3 + detail at its widest: DW5 for 5h, DW7 for 7d), so columns do
+# not move with the data. The last slot of a row needs no width.
+pack() {
+  local i t l w
+  PT=(); PL=(); PW=(); PN=0
+  for i in 0 1 2; do
+    if [ "$1" = m ]; then t=${MT[i]}; l=${ML[i]}; else t=${AT[i]}; l=${AL[i]}; fi
+    [ -n "$t" ] || continue
+    case "$1$i" in
+      m0) w=$(( 14 + BARN + DW5 )) ;;
+      m1) w=$(( 14 + BARN + DW7 )) ;;
+      a0) w=29 ;;                                   # "cache hit  95%  expires 1h0m"
+      a1) w=23 ;;                                   # "changed  +999 −999"
+      *)  w=0 ;;
+    esac
+    [ "$l" -gt "$w" ] && w=$l
+    PT[PN]=$t; PL[PN]=$l; PW[PN]=$w; PN=$(( PN + 1 ))
+  done
+}
+
+# emit <n> <text0> <len0> <text1> <len1> <text2> <len2> -> SROW and its plain length SLEN: the n
+# packed slots joined by SEP, each slot but the last padded to its column width WD[i] (shared by
+# both rows, so slot i starts in the same column in each). A │ sits only between two slots.
+emit() {
+  local n=$1 i=0 t l pad
+  shift
+  SROW=""; SLEN=0
+  while [ "$i" -lt "$n" ]; do
+    t=$1; l=$2; shift 2
+    if [ "$i" -lt $(( n - 1 )) ]; then
+      pad=$(( WD[i] - l )); gap "$pad"
+      SROW="${SROW}${t}${SP}${SEP}"; SLEN=$(( SLEN + WD[i] + SEPW ))
+    else
+      SROW="${SROW}${t}"; SLEN=$(( SLEN + l ))
     fi
     i=$(( i + 1 ))
   done
@@ -304,18 +324,11 @@ BRANCH=""
 [ "${#BRANCH}" -gt 28 ] && BRANCH="${BRANCH:0:27}…"
 [ -n "$BRANCH" ] && ident "⎇ ${BRANCH}" "${OK}⎇ ${BRANCH}${R}"
 
-if [ -n "$SESS" ]; then
-  if [ "$WIDE" = 1 ]; then
-    # Right-aligned so the session name ends at the right edge of the block.
-    vlen "$IDP"; ilen=$VL; vlen "$SESS"
-    pad=$(( TOTAL - (${#MARGIN} + ilen) - VL )); [ "$pad" -lt 3 ] && pad=3
-    gap "$pad"; IDC="${IDC}${SP}${LABEL}${SESS}${R}"
-  else
-    ident "$SESS" "${LABEL}${SESS}${R}"
-  fi
-fi
-
-# ---- meters --------------------------------------------------------------------------
+# ---- rows ----------------------------------------------------------------------------
+# build fills the meter and activity rows for the current BARN / SHOWCLK / WIDE settings; it can
+# run once per step of the wide ladder.
+build() {
+LROWS=(); AROWS=(); MT=("" "" ""); ML=(0 0 0); AT=("" "" ""); AL=(0 0 0)
 reset_detail "$H5R" "%H:%M";    meter 5h "$H5" "$DET" "$DETP"; addl 0
 reset_detail "$D7R" "%a %H:%M"; meter 7d "$D7" "$DET" "$DETP"; addl 1
 
@@ -328,12 +341,8 @@ if isnum "$CTXTOK" && isnum "$CTXSIZE"; then
   DETP="${USED}/${HUM}"; DET="${LABEL}${DETP}${R}"
 fi
 if [ "$EX200" = "true" ]; then
-  vlen "$DETP"
-  # Wide: the ctx slot is the last one, so it may run past its budget; when that would overflow
-  # the line, the token count is dropped and only the warning stays.
-  if [ "$WIDE" = 1 ] && [ $(( ${#MARGIN} + COL3 + 3 + LGAP + BARN + BARGAP + PCTW + GAPW + VL + 8 )) -gt "$LIM" ]; then
-    DET=""; DETP=""
-  fi
+  # Last step of the wide ladder (DROPTOK): the token count is dropped and only the warning stays.
+  if [ "$WIDE" = 1 ] && [ "$DROPTOK" = 1 ]; then DET=""; DETP=""; fi
   [ -n "$DET" ] && { DET="${DET} "; DETP="${DETP} "; }
   DET="${DET}${WARN}⚠ >200k${R}"; DETP="${DETP}⚠ >200k"
 fi
@@ -373,18 +382,58 @@ if [ -n "$EL" ]; then
   adda 2
 fi
 
+}
+
+# ---- layout --------------------------------------------------------------------------
+# Wide ladder: "<bar cells> <clock times> <drop ctx tokens>". Each row lists only its present
+# slots, packed left to right, so a missing meter frees its column instead of leaving a blank one.
+# Slot i has the same width in both rows (WD[i], from the widest slot that has one), so slot i
+# starts in the same column in each row. The first step whose widest row fits LIM wins; fewer
+# slots means more room. When none fits the compact stack is used.
+WIDE=0
+for CFG in "12 1 0" "12 0 0" "10 0 0" "10 0 1"; do
+  read -r BARN SHOWCLK DROPTOK <<<"$CFG"
+  [ "$DROPTOK" = 1 ] && [ "$EX200" != "true" ] && continue
+  if [ "$SHOWCLK" = 1 ]; then DW5=15; DW7=19; else DW5=7; DW7=8; fi   # "↻ 4h59m · 23:59" / "↻ 6d23h · Wed 23:59"
+  WIDE=1; LABW=3; LGAP=2; BARGAP=2; GAPW=3; ALABW=0; AVALW=5
+  build
+  pack m; MPN=$PN; MPT=("${PT[@]}"); MPL=("${PL[@]}"); MPW=("${PW[@]}")
+  pack a; APN=$PN; APT=("${PT[@]}"); APL=("${PL[@]}"); APW=("${PW[@]}")
+  WD=(0 0)
+  for i in 0 1; do
+    [ "$i" -lt $(( MPN - 1 )) ] && [ "${MPW[i]}" -gt "${WD[i]}" ] && WD[i]=${MPW[i]}
+    [ "$i" -lt $(( APN - 1 )) ] && [ "${APW[i]}" -gt "${WD[i]}" ] && WD[i]=${APW[i]}
+  done
+  emit "$MPN" "${MPT[0]}" "${MPL[0]}" "${MPT[1]}" "${MPL[1]}" "${MPT[2]}" "${MPL[2]}"
+  G2=""; [ -n "$SROW" ] && G2="${MARGIN}${SROW}"; TOTAL=$SLEN
+  emit "$APN" "${APT[0]}" "${APL[0]}" "${APT[1]}" "${APL[1]}" "${APT[2]}" "${APL[2]}"
+  G3=""; [ -n "$SROW" ] && G3="${MARGIN}${SROW}"; [ "$SLEN" -gt "$TOTAL" ] && TOTAL=$SLEN
+  TOTAL=$(( ${#MARGIN} + TOTAL ))
+  [ "$TOTAL" -le "$LIM" ] && break
+  WIDE=0
+done
+if [ "$WIDE" = 0 ]; then
+  SHOWCLK=1; BARN=10; DROPTOK=0; LABW=11; LGAP=0; BARGAP=3; GAPW=4
+  ALABW=11; AVALW=$(( LABW + BARN + BARGAP + PCTW + GAPW - ALABW ))   # detail lines up with the meters'
+  build
+  G2=""; G3=""
+  for L in "${LROWS[@]}"; do G2="${G2:+${G2}$'\n'}${MARGIN}${L}"; done
+  for L in "${AROWS[@]}"; do G3="${G3:+${G3}$'\n'}${MARGIN}${L}"; done
+fi
+
 # ---- output --------------------------------------------------------------------------
 # Groups (identity, meters, activity) are separated by one SPACER line; empty groups and their
 # spacers are dropped, so a spacer is never first, last or doubled.
-G2=""; G3=""
-if [ "$WIDE" = 1 ]; then
-  slotrow "${MT[0]}" "${ML[0]}" "${MT[1]}" "${ML[1]}" "${MT[2]}" "${ML[2]}"
-  [ -n "$SROW" ] && G2="${MARGIN}${SROW}"
-  slotrow "${AT[0]}" "${AL[0]}" "${AT[1]}" "${AL[1]}" "${AT[2]}" "${AL[2]}"
-  [ -n "$SROW" ] && G3="${MARGIN}${SROW}"
-else
-  for L in "${LROWS[@]}"; do G2="${G2:+${G2}$'\n'}${MARGIN}${L}"; done
-  for L in "${AROWS[@]}"; do G3="${G3:+${G3}$'\n'}${MARGIN}${L}"; done
+# The session name is dropped when it would push the identity row past the width.
+vlen "$IDP"; ilen=$VL; vlen "$SESS"
+if [ -n "$SESS" ] && [ $(( ${#MARGIN} + ilen + 3 + VL )) -le "$LIM" ]; then
+  if [ "$WIDE" = 1 ]; then
+    # Right-aligned so the session name ends at the right edge of the block.
+    pad=$(( TOTAL - (${#MARGIN} + ilen) - VL )); [ "$pad" -lt 3 ] && pad=3
+    gap "$pad"; IDC="${IDC}${SP}${LABEL}${SESS}${R}"
+  else
+    ident "$SESS" "${LABEL}${SESS}${R}"
+  fi
 fi
 
 printf '%s%s\n' "$MARGIN" "$IDC"
