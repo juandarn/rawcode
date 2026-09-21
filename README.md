@@ -110,22 +110,27 @@ rawcode/
 │   ├── protect-sensitive-files.sh
 │   ├── enforce-read-before-write.sh
 │   └── sanitize-commit.sh
-└── ui/statusline.sh           # Shows model, context %, cost, git branch
+└── ui/statusline.sh           # Status line: identity, plan/context meters, cache and activity
 ```
 
 The installer activates the **output style** (`outputStyle: "rawcode"` in your settings), which applies the prompt to every main session — no invocation needed. The **hooks** auto-load from `hooks/hooks.json` once the plugin is enabled and intercept tool calls to prevent common mistakes. Prefer to opt in manually? Run `/config → Output style → rawcode`.
 
 ## Statusline
 
-rawcode adds a powerline-style status bar showing real-time info:
+rawcode adds a calm status bar of up to three lines. A segment appears only when Claude Code sends its data.
 
 ```
- rawcode  @agent   sonnet  ctx:45%  $0.12   main
+◆ rawcode  Sonnet 5 · high  juandarn/rawcode  ⎇ main
+5h  ━━━━━━────  62%  ↻ 2h10m  │  7d  ━━━───────  31%  ↻ 2d9h  │  ctx ━━━━━━━───  66%  132k/200k
+cache 93%  │  +120 −30  │  1h 0m
 ```
 
-- **Context color**: green (< 60%), yellow (60-79%), red (>= 80% — compact now)
-- **Cost**: running session cost
-- **Branch**: current git branch
+- **Line 1, identity**: model and effort level (low grey, medium white, high cyan, xhigh/max violet), repo (`owner/name`, or the directory name), git branch, and the session name when one is set
+- **Line 2, meters**: `5h` / `7d` claude.ai plan limits with a reset countdown, and `ctx` context usage. The used/total token pair shows only once context reaches 60%. The plan meters appear only for Pro/Max subscribers, after the first API response; a missing window is skipped
+- **Line 3, activity**: prompt cache (green `cache 93%` while warm, red `cache cold` once it has expired, hidden when the provider reports no caching), lines added/removed, and session time. The line is dropped when all three are empty. Session cost in dollars is intentionally not shown
+- **Threshold colors**: every bar and percentage is green below 60%, yellow at 60-79%, red at 80% and above; the unused part of a bar is a dim track
+- **Palette** (256-colour only): violet 141 accent (never red, so it never reads as an alert), green 78, yellow 221, red 203, and greys 245 label, 252 value, 255 model, 238 track, 240 separator
+- The cache segment needs Claude Code v2.1.251+
 
 ## Uninstall
 
