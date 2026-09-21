@@ -2,9 +2,11 @@
 # rawcode status line for Claude Code (up to three lines, calm by default).
 # Reads the statusLine JSON from stdin. Field names per the Claude Code docs:
 # https://code.claude.com/docs/en/statusline
-#   line 1  identity  : ◆ rawcode  model · effort  repo  ⎇ branch  [session name]
-#   line 2  meters    : 5h / 7d plan usage (Pro/Max only) and ctx, as 10-cell bars
-#   line 3  activity  : prompt-cache state │ lines changed │ session time
+#   line 1  identity  : ◆ rawcode   model · effort   repo   ⎇ branch   [session name]
+#   line 2  meters    : 5h / 7d plan usage (Pro/Max only) and ctx, as 10-cell bars,
+#                       with reset countdown + local clock and used/total tokens
+#   line 3  activity  : prompt-cache state │ lines changed │ session time │ API share
+# Rows are separated by a spacer line holding one NBSP (a plain empty line would be trimmed).
 # A segment is omitted when its data is absent; nothing is printed as a placeholder.
 # Bars and percentages turn yellow at 60% and red at 80%.
 # Palette (256-colour only): violet 141 accent, green 78 ok, yellow 221 warn, red 203 crit,
@@ -27,8 +29,8 @@ fi
 # One jq call, tab-separated. "-" marks an absent field so `read` never collapses empty columns.
 # Counts and percentages are rounded to integers here; strings are stripped of control
 # characters and truncated by codepoint so bash never cuts a multibyte character.
-FIELDS=(MODEL EFFORT REPO DIR SESS CTXP CTXTOK CTXSIZE H5 H5R D7 D7R
-        HAVEPC OBS CWARM EXPIRES HIT LADD LREM DUR)
+FIELDS=(MODEL EFFORT REPO DIR SESS CTXP CTXTOK CTXSIZE EX200 H5 H5R D7 D7R
+        HAVEPC OBS CWARM EXPIRES HIT LADD LREM DUR API)
 IFS=$'\t' read -r "${FIELDS[@]}" <<<"$(printf '%s' "$INPUT" | jq -r '
   def f: (if type == "string" then gsub("[[:cntrl:]]"; "") else . end)
          | if . == null or . == "" then "-" else . end;
@@ -44,6 +46,7 @@ IFS=$'\t' read -r "${FIELDS[@]}" <<<"$(printf '%s' "$INPUT" | jq -r '
     r(.context_window.used_percentage),
     n(.context_window.total_input_tokens),
     n(.context_window.context_window_size),
+    v(.exceeds_200k_tokens),
     r(.rate_limits.five_hour.used_percentage),
     n(.rate_limits.five_hour.resets_at),
     r(.rate_limits.seven_day.used_percentage),
@@ -55,7 +58,9 @@ IFS=$'\t' read -r "${FIELDS[@]}" <<<"$(printf '%s' "$INPUT" | jq -r '
     r(.prompt_cache.hit_ratio | if . == null then null else . * 100 end),
     n(.cost.total_lines_added),
     n(.cost.total_lines_removed),
-    n(.cost.total_duration_ms / 1000)
+    n(.cost.total_duration_ms / 1000),
+    r(if (.cost.total_duration_ms // 0) > 0 and .cost.total_api_duration_ms != null
+        then .cost.total_api_duration_ms * 100 / .cost.total_duration_ms else null end)
   ] | @tsv' 2>/dev/null)"
 
 for v in "${FIELDS[@]}"; do
@@ -97,6 +102,11 @@ countdown() {
   else CD="$(( left / 60 ))m"; fi
 }
 
+# clock <epoch> <strftime-format>  -> local time in CLK (BSD `date -r`, GNU `date -d @` fallback)
+clock() {
+  CLK=$(date -r "$1" "+$2" 2>/dev/null) || CLK=$(date -d "@$1" "+$2" 2>/dev/null) || CLK=""
+}
+
 # elapsed <seconds> -> "1h 12m" | "12m" | "40s" in EL
 elapsed() {
   EL=""
@@ -116,15 +126,22 @@ human() {
   else HUM="$1"; fi
 }
 
-# meter <label> <pct> [resets_at]
-#   -> "5h  ━━━━━━────  62%  ↻ 2h10m" (empty when pct is absent). Labels share one width.
+# meter <label> <pct> [resets_at] [clock-format]
+#   -> "5h  ━━━━━━────  62%   ↻ 2h10m · 21:40" (empty when pct is absent). Labels share one width.
 meter() {
   local lab out
   isnum "$2" || return 0
   printf -v lab '%-3s' "$1"
   pcol "$2"; bar "$2"; countdown "$3"
-  printf -v out '%s%s%s %s %s%3d%%%s' "$LABEL" "$lab" "$R" "$BAR" "$PC" "$2" "$R"
-  [ -n "$CD" ] && out="${out}  ${LABEL}↻ ${CD}${R}"
+  printf -v out '%s%s%s  %s  %s%3d%%%s' "$LABEL" "$lab" "$R" "$BAR" "$PC" "$2" "$R"
+  if [ -n "$CD" ]; then
+    out="${out}   ${LABEL}↻ ${CD}"
+    if [ -n "$4" ]; then
+      clock "$3" "$4"
+      [ -n "$CLK" ] && out="${out} · ${CLK}"
+    fi
+    out="${out}${R}"
+  fi
   printf '%s' "$out"
 }
 
@@ -139,7 +156,7 @@ join() {
   done
 }
 
-BAR_SEP="  ${SEPC}│${R}  "
+BAR_SEP="   ${SEPC}│${R}   "
 
 # ---- line 1: identity ----------------------------------------------------------------
 case "$EFFORT" in
@@ -171,7 +188,7 @@ BRANCH=""
 BRANCH_SEG=""; [ -n "$BRANCH" ] && BRANCH_SEG="${OK}⎇ ${BRANCH}${R}"
 SESS_SEG="";   [ -n "$SESS" ]   && SESS_SEG="${LABEL}${SESS}${R}"
 
-join "  " "$LOGO" "$MODEL_SEG" "$REPO_SEG" "$BRANCH_SEG" "$SESS_SEG"
+join "   " "$LOGO" "$MODEL_SEG" "$REPO_SEG" "$BRANCH_SEG" "$SESS_SEG"
 L1="$JOINED"
 
 # ---- line 2: plan + context meters ---------------------------------------------------
@@ -181,13 +198,13 @@ if ! isnum "$CTXP" && isnum "$CTXTOK" && isnum "$CTXSIZE" && [ "$CTXSIZE" -gt 0 
 fi
 if isnum "$CTXP"; then
   CTX_SEG=$(meter ctx "$CTXP")
-  # Token pair only once the window is getting full (>= 60%).
-  if [ "$CTXP" -ge 60 ] && isnum "$CTXTOK" && isnum "$CTXSIZE"; then
+  if isnum "$CTXTOK" && isnum "$CTXSIZE"; then
     human "$CTXTOK"; USED="$HUM"; human "$CTXSIZE"
-    CTX_SEG="${CTX_SEG}  ${LABEL}${USED}/${HUM}${R}"
+    CTX_SEG="${CTX_SEG}   ${LABEL}${USED}/${HUM}${R}"
   fi
+  [ "$EX200" = "true" ] && CTX_SEG="${CTX_SEG} ${WARN}⚠ >200k${R}"
 fi
-join "$BAR_SEP" "$(meter 5h "$H5" "$H5R")" "$(meter 7d "$D7" "$D7R")" "$CTX_SEG"
+join "$BAR_SEP" "$(meter 5h "$H5" "$H5R" %H:%M)" "$(meter 7d "$D7" "$D7R" "%a %H:%M")" "$CTX_SEG"
 L2="$JOINED"
 
 # ---- line 3: activity ----------------------------------------------------------------
@@ -197,6 +214,7 @@ if [ -n "$HAVEPC" ] && [ "$OBS" != "false" ]; then
   # Warm only while the TTL has not lapsed; a past expires_at means the cache went cold.
   if [ "$CWARM" = "true" ] && { ! isnum "$EXPIRES" || [ -n "$CD" ]; }; then
     if isnum "$HIT"; then CACHE_SEG="${OK}cache ${HIT}%${R}"; else CACHE_SEG="${OK}cache warm${R}"; fi
+    [ -n "$CD" ] && CACHE_SEG="${CACHE_SEG}  ${LABEL}↻ ${CD}${R}"
   else
     CACHE_SEG="${CRIT}cache cold${R}"
   fi
@@ -209,11 +227,14 @@ fi
 
 elapsed "$DUR"
 TIME_SEG=""; [ -n "$EL" ] && TIME_SEG="${LABEL}${EL}${R}"
+API_SEG="";  isnum "$API" && API_SEG="${LABEL}api ${API}%${R}"
 
-join "$BAR_SEP" "$CACHE_SEG" "$LINES_SEG" "$TIME_SEG"
+join "$BAR_SEP" "$CACHE_SEG" "$LINES_SEG" "$TIME_SEG" "$API_SEG"
 L3="$JOINED"
 
+# Rows are separated by a single-NBSP line: Claude Code trims truly empty lines.
+NBSP=$'\xc2\xa0'
 printf '%s\n' "$L1"
-[ -n "$L2" ] && printf '%s\n' "$L2"
-[ -n "$L3" ] && printf '%s\n' "$L3"
+[ -n "$L2" ] && printf '%s\n%s\n' "$NBSP" "$L2"
+[ -n "$L3" ] && printf '%s\n%s\n' "$NBSP" "$L3"
 exit 0
