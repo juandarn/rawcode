@@ -117,24 +117,38 @@ The installer activates the **output style** (`outputStyle: "rawcode"` in your s
 
 ## Statusline
 
-rawcode adds a calm status bar: one metric per row, in three groups. Groups are separated by a one-character spacer line (a non-breaking space, so Claude Code does not trim it). Rows share fixed columns, so labels, bars, percentages and details line up. A row or segment appears only when Claude Code sends its data.
+rawcode adds a calm status bar: an identity row, a dim rule, then the meters and the activity rows. A row or segment appears only when Claude Code sends its data, and no blank lines are printed. The layout follows the terminal width, read once with `stty size` (falling back to `$COLUMNS`):
+
+- **Wide** (100 columns or more, or an unknown width): meters on the left, activity on the right, in fixed columns of at most 104 columns. The session name sits at the right edge of the identity row. If there are no meters, the activity rows move to the left margin.
+- **Compact** (under 100 columns): one metric per row, all rows sharing the same columns.
+
+Every line has a 2-column margin.
 
 ```
-◆ rawcode   Sonnet 5 · high   juandarn/rawcode   ⎇ main   my session
- 
-5h     ━━━━━━────    62%    ↻ 2h48m · 21:40
-7d     ━━━───────    31%    ↻ 2d9h · Wed 14:00
-ctx    ━━━━━━━───    66%    132k/200k  ⚠ >200k
- 
-cache  95%                  ↻ 4m
-lines  +120 −30
-time   1h 0m                api 25%
+  ◆ rawcode   Sonnet 5 · high · 1M   juandarn/rawcode   ⎇ main                       my session
+  ──────────────────────────────────────────────────────────────────────────────────────────────────────
+  5h   ██████████░░░░░░    62%   ↻ 2h48m · 21:40           cache hit  95%   expires 4m
+  7d   █████░░░░░░░░░░░    31%   ↻ 2d9h · Wed 14:00        changed    +120 −30
+  ctx  ███████████░░░░░    66%   132k/200k  ⚠ >200k        session    1h 0m · 25% in API calls
 ```
 
-- **Identity**: model and effort level (low grey, medium white, high cyan, xhigh/max violet), repo (`owner/name`, or the directory name), git branch, and the session name when one is set
+Compact:
+
+```
+  ◆ rawcode   Sonnet 5 · high · 1M   juandarn/rawcode   ⎇ main   my session
+  ────────────────────────────────────────────────────────────────────────
+  5h         ██████░░░░    62%    ↻ 2h48m · 21:40
+  7d         ███░░░░░░░    31%    ↻ 2d9h · Wed 14:00
+  ctx        ███████░░░    66%    132k/200k  ⚠ >200k
+  cache hit  95%                  expires 4m
+  changed    +120 −30
+  session    1h 0m                25% in API calls
+```
+
+- **Identity**: model, effort level (low grey, medium white, high cyan, xhigh/max violet) and context window size, then the repo (`owner/name`, or the directory name), git branch, and the session name when one is set
 - **Meters**: `5h` / `7d` claude.ai plan limits with the reset countdown and the local clock time of the reset (`21:40` for 5h, `Wed 14:00` for 7d), and `ctx` with used/total tokens, plus a yellow `⚠ >200k` once the context passes 200k tokens. The plan rows appear only for Pro/Max subscribers, after the first API response; a missing window simply disappears
-- **Activity**: `cache` (green hit ratio with the time left before it expires while warm, red `cold` once it has expired, hidden when the provider reports no caching), `lines` added/removed, and `time` in session with `api N%`, the share of it spent waiting on the API. The group is dropped when all rows are empty. Session cost in dollars is intentionally not shown
-- **Threshold colors**: every bar and percentage is green below 60%, yellow at 60-79%, red at 80% and above; the unused part of a bar is a dim track
+- **Activity**: `cache hit` (green hit ratio with the time left before the cache expires; a red `cache cold` once it has expired; hidden when the provider reports no caching), `changed` lines added/removed, and `session` time with the share of it spent waiting on the API. Session cost in dollars is intentionally not shown
+- **Bars and colors**: bars are 16 cells wide (compact: 10), `█` for the load and a dim `░` track for the rest; bars and percentages are green below 60%, yellow at 60-79% and red at 80% and above
 - **Palette** (256-colour only): violet 141 accent (never red, so it never reads as an alert), green 78, yellow 221, red 203, and greys 245 label, 252 value, 255 model, 238 track
 - The cache rows need Claude Code v2.1.251+
 
